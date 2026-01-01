@@ -1,0 +1,57 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "Bracket Magic" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - img "Bracket Magic" [ref=e5]
+      - navigation [ref=e6]:
+        - link "Dashboard" [ref=e7] [cursor=pointer]:
+          - /url: /
+        - link "New Tournament" [ref=e8] [cursor=pointer]:
+          - /url: /tournament/new
+        - link "History" [ref=e9] [cursor=pointer]:
+          - /url: /history
+        - link "Players" [ref=e10] [cursor=pointer]:
+          - /url: /players
+        - link "Stats" [ref=e11] [cursor=pointer]:
+          - /url: /stats
+      - generic [ref=e12]:
+        - button "Export backup" [ref=e13] [cursor=pointer]:
+          - img [ref=e14]
+        - button "Import backup" [ref=e16] [cursor=pointer]:
+          - img [ref=e17]
+        - button "Toggle theme" [ref=e19] [cursor=pointer]:
+          - img [ref=e20]
+  - main [ref=e22]:
+    - main [ref=e24]:
+      - heading "Tournament History" [level=1] [ref=e25]
+      - paragraph [ref=e27]: No completed tournaments yet
+  - contentinfo [ref=e28]:
+    - generic [ref=e30]:
+      - generic [ref=e31]:
+        - generic [ref=e32]: Special Shoutout
+        - paragraph [ref=e33]: 🎉 Happy Birthday, Michael Hofeling!
+      - generic [ref=e34]:
+        - link "Bracket Magic" [ref=e35] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e36]: Bracket Magic
+        - generic [ref=e37]:
+          - link "Website" [ref=e38] [cursor=pointer]:
+            - /url: https://davidsolheim.com
+          - generic [ref=e39]: •
+          - link "Create" [ref=e40] [cursor=pointer]:
+            - /url: /tournament/new
+      - generic [ref=e41]:
+        - paragraph [ref=e42]:
+          - text: Created with ❤️ by
+          - link "David Solheim" [ref=e43] [cursor=pointer]:
+            - /url: https://davidsolheim.com
+        - paragraph [ref=e44]: © 2026 All rights reserved.
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e50] [cursor=pointer]:
+    - img [ref=e51]
+  - alert [ref=e54]
+```

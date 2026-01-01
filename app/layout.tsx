@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { TournamentProvider } from "@/contexts/TournamentContext";
 import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 import { Toaster } from "sonner";
 import { ErrorBoundaryWrapper } from "@/components/ErrorBoundaryWrapper";
 
@@ -44,14 +45,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="h-full">
       <body
-        className={`${jakartaSans.variable} ${jetbrainsMono.variable} antialiased`}
+        className={`${jakartaSans.variable} ${jetbrainsMono.variable} antialiased h-full flex flex-col`}
       >
         <ErrorBoundaryWrapper>
           <TournamentProvider>
             <Header />
-            {children}
+            <main className="flex-1">
+              {children}
+            </main>
+            <Footer />
           </TournamentProvider>
           <Toaster theme="system" richColors />
         </ErrorBoundaryWrapper>

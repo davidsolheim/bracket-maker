@@ -66,9 +66,8 @@ export function Header() {
   return (
     <header className="border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-        <Link href="/" className="flex items-center gap-2 text-2xl font-bold text-green-600 dark:text-green-400">
-          <img src="/bracket-magic-icon.png" alt="" className="h-8 w-8" />
-          Bracket Magic
+        <Link href="/" className="flex items-center">
+          <img src="/bracket-magic-banner.png" alt="Bracket Magic" className="h-18 w-auto" />
         </Link>
         
         {/* Desktop Navigation */}

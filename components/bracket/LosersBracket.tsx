@@ -9,6 +9,7 @@ interface LosersBracketProps {
   matches: Match[];
   players: Player[];
   onMatchClick: (match: Match) => void;
+  onOverrideClick?: (match: Match) => void;
   activeMatchId?: string;
 }
 
@@ -16,6 +17,7 @@ export function LosersBracket({
   matches,
   players,
   onMatchClick,
+  onOverrideClick,
   activeMatchId,
 }: LosersBracketProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -108,6 +110,7 @@ export function LosersBracket({
                     match={match}
                     players={players}
                     onScoreClick={() => onMatchClick(match)}
+                    onOverrideClick={onOverrideClick ? () => onOverrideClick(match) : undefined}
                     isActive={activeMatchId === match.id}
                     compact
                   />

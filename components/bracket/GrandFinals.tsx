@@ -9,6 +9,7 @@ interface GrandFinalsProps {
   matches: Match[];
   players: Player[];
   onMatchClick: (match: Match) => void;
+  onOverrideClick?: (match: Match) => void;
   activeMatchId?: string;
 }
 
@@ -16,6 +17,7 @@ export function GrandFinals({
   matches,
   players,
   onMatchClick,
+  onOverrideClick,
   activeMatchId,
 }: GrandFinalsProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -97,6 +99,7 @@ export function GrandFinals({
               match={match}
               players={players}
               onScoreClick={() => onMatchClick(match)}
+              onOverrideClick={onOverrideClick ? () => onOverrideClick(match) : undefined}
               isActive={activeMatchId === match.id}
             />
           </div>

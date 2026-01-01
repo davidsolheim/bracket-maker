@@ -9,14 +9,18 @@ interface WinnersBracketProps {
   matches: Match[];
   players: Player[];
   onMatchClick: (match: Match) => void;
+  onOverrideClick?: (match: Match) => void;
   activeMatchId?: string;
+  title?: string;
 }
 
 export function WinnersBracket({
   matches,
   players,
   onMatchClick,
+  onOverrideClick,
   activeMatchId,
+  title = 'Winners Bracket',
 }: WinnersBracketProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const matchRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -85,7 +89,7 @@ export function WinnersBracket({
   return (
     <div className="rounded-lg border-2 border-green-200 bg-green-50/50 p-6 dark:border-green-800 dark:bg-green-950/20">
       <h2 className="mb-6 text-2xl font-bold text-green-700 dark:text-green-300">
-        Winners Bracket
+        {title}
       </h2>
       <div ref={containerRef} className="relative flex gap-8 overflow-x-auto pb-4">
         <BracketConnector
@@ -109,6 +113,7 @@ export function WinnersBracket({
                     match={match}
                     players={players}
                     onScoreClick={() => onMatchClick(match)}
+                    onOverrideClick={onOverrideClick ? () => onOverrideClick(match) : undefined}
                     isActive={activeMatchId === match.id}
                     compact
                   />

@@ -1,6 +1,23 @@
-export type BracketType = 'winners' | 'losers' | 'grand-finals';
+export type BracketType = 'winners' | 'losers' | 'grand-finals' | 'round-robin' | 'swiss' | 'group';
 
 export type TournamentStatus = 'draft' | 'active' | 'completed';
+
+export type TournamentFormat = 
+  | 'single-elimination' 
+  | 'double-elimination' 
+  | 'round-robin' 
+  | 'swiss' 
+  | 'group-knockout';
+
+export interface TournamentFormatConfig {
+  // Swiss system
+  numberOfRounds?: number;
+  // Group Stage
+  groupCount?: number;
+  playersPerGroup?: number;
+  advancePerGroup?: number;
+  knockoutFormat?: 'single-elimination' | 'double-elimination';
+}
 
 export interface Player {
   id: string;
@@ -8,6 +25,8 @@ export interface Player {
   seed: number;
   wins?: number;
   losses?: number;
+  // For group stage tournaments
+  groupId?: string;
 }
 
 export interface Match {
@@ -21,20 +40,43 @@ export interface Match {
   player2Score: number | null;
   winnerId: string | null;
   isBye: boolean;
+  isForfeited?: boolean;
+  notes?: string;
   nextMatchId: string | null;
   nextMatchPosition: number | null;
   loserNextMatchId: string | null;
   loserNextMatchPosition: number | null;
+  // For group stage / round robin
+  groupId?: string;
+}
+
+export interface GroupStanding {
+  playerId: string;
+  playerName: string;
+  groupId?: string;
+  wins: number;
+  losses: number;
+  draws: number;
+  pointsFor: number;
+  pointsAgainst: number;
+  pointDifferential: number;
+  matchesPlayed: number;
 }
 
 export interface Tournament {
   id: string;
   name: string;
+  format: TournamentFormat;
+  formatConfig?: TournamentFormatConfig;
   status: TournamentStatus;
   players: Player[];
   matches: Match[];
   createdAt: Date;
   completedAt: Date | null;
+  // For group-knockout: track when group stage is complete
+  groupStageComplete?: boolean;
+  // Current round for Swiss tournaments
+  currentSwissRound?: number;
 }
 
 export interface PlayerList {

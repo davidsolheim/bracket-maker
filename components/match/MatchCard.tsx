@@ -9,6 +9,7 @@ interface MatchCardProps {
   match: Match;
   players: Player[];
   onScoreClick?: () => void;
+  onOverrideClick?: () => void;
   isActive?: boolean;
   compact?: boolean;
 }
@@ -17,6 +18,7 @@ export function MatchCard({
   match,
   players,
   onScoreClick,
+  onOverrideClick,
   isActive = false,
   compact = false,
 }: MatchCardProps) {
@@ -59,11 +61,50 @@ export function MatchCard({
       )}
       onClick={(canPlay || canEdit) ? onScoreClick : undefined}
     >
-      <div className="mb-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
-        {match.bracket === 'winners' && 'Winners'}
-        {match.bracket === 'losers' && 'Losers'}
-        {match.bracket === 'grand-finals' && 'Grand Finals'} - Round{' '}
-        {match.round}
+      <div className="mb-1 flex items-center justify-between">
+        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+          {match.bracket === 'winners' && 'Winners'}
+          {match.bracket === 'losers' && 'Losers'}
+          {match.bracket === 'grand-finals' && 'Grand Finals'} - Round{' '}
+          {match.round}
+        </span>
+        <div className="flex items-center gap-1">
+          {match.isForfeited && (
+            <span className="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+              FF
+            </span>
+          )}
+          {onOverrideClick && !isComplete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onOverrideClick();
+              }}
+              className="rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300 cursor-pointer"
+              title="Match override options"
+            >
+              <svg
+                className="h-3.5 w-3.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="space-y-1">

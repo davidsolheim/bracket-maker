@@ -2,12 +2,17 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import type { Tournament, Player, Match } from '@/types/tournament';
+import type { Tournament, Player, Match, TournamentFormat, TournamentFormatConfig } from '@/types/tournament';
 import {
-  generateDoubleEliminationBracket,
+  generateBracket,
   updateMatchResult,
   resetDownstreamMatches,
+  forceMatchWinner as forceMatchWinnerLib,
+  overrideMatchPlayers as overrideMatchPlayersLib,
+  generateSwissNextRound,
+  generateKnockoutFromGroups,
 } from '@/lib/bracket';
+import { isGroupStageComplete, isRoundComplete } from '@/lib/standings';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { validateTournaments } from '@/lib/validators';
 import { toast } from 'sonner';
@@ -16,7 +21,12 @@ interface TournamentContextType {
   tournaments: Tournament[];
   currentTournament: Tournament | null;
   isLoading: boolean;
-  createTournament: (name: string, players: Player[]) => Tournament;
+  createTournament: (
+    name: string,
+    players: Player[],
+    format: TournamentFormat,
+    formatConfig?: TournamentFormatConfig
+  ) => Tournament;
   updateTournament: (tournament: Tournament) => void;
   setCurrentTournament: (id: string | null) => void;
   startTournament: (id: string) => void;
@@ -28,6 +38,20 @@ interface TournamentContextType {
     isReScoring?: boolean
   ) => void;
   deleteTournament: (id: string) => void;
+  overrideMatchPlayers: (
+    tournamentId: string,
+    matchId: string,
+    player1Id: string | null,
+    player2Id: string | null
+  ) => void;
+  forceMatchWinner: (
+    tournamentId: string,
+    matchId: string,
+    winnerId: string,
+    isForfeited?: boolean
+  ) => void;
+  advanceSwissRound: (tournamentId: string) => void;
+  advanceToKnockout: (tournamentId: string) => void;
 }
 
 const STORAGE_KEY = 'bracket-maker-tournaments';
@@ -87,10 +111,17 @@ export function TournamentProvider({
     setRawTournaments(serializeTournaments(updated));
   }, [setRawTournaments]);
 
-  const createTournament = (name: string, players: Player[]): Tournament => {
+  const createTournament = (
+    name: string,
+    players: Player[],
+    format: TournamentFormat = 'double-elimination',
+    formatConfig?: TournamentFormatConfig
+  ): Tournament => {
     const tournament: Tournament = {
       id: uuidv4(),
       name,
+      format,
+      formatConfig,
       status: 'draft',
       players: players.map((p, index) => ({
         ...p,
@@ -129,14 +160,87 @@ export function TournamentProvider({
     const tournament = tournaments.find((t) => t.id === id);
     if (!tournament || tournament.status !== 'draft') return;
 
-    const matches = generateDoubleEliminationBracket(tournament.players);
+    const matches = generateBracket(
+      tournament.players,
+      tournament.format,
+      tournament.formatConfig
+    );
+
     const updated: Tournament = {
       ...tournament,
       status: 'active',
       matches,
+      currentSwissRound: tournament.format === 'swiss' ? 1 : undefined,
     };
 
     updateTournament(updated);
+  };
+
+  const checkTournamentComplete = (tournament: Tournament, matches: Match[]): boolean => {
+    const format = tournament.format;
+
+    switch (format) {
+      case 'single-elimination': {
+        // Tournament is complete when the final match has a winner
+        const winnersMatches = matches.filter((m) => m.bracket === 'winners');
+        const maxRound = Math.max(...winnersMatches.map((m) => m.round), 0);
+        const finalMatch = winnersMatches.find((m) => m.round === maxRound);
+        return !!finalMatch?.winnerId;
+      }
+
+      case 'double-elimination': {
+        // Complete when grand finals round 2 has a winner, or round 1 if winners bracket champ wins
+        const grandFinals = matches.filter((m) => m.bracket === 'grand-finals');
+        const gfRound1 = grandFinals.find((m) => m.round === 1);
+        const gfRound2 = grandFinals.find((m) => m.round === 2);
+        
+        // If round 1 is done and winners bracket champ won, tournament is over
+        if (gfRound1?.winnerId === gfRound1?.player1Id) {
+          return true;
+        }
+        // Otherwise need round 2 to complete
+        return !!gfRound2?.winnerId;
+      }
+
+      case 'round-robin': {
+        // Complete when all matches are played
+        return matches.every((m) => m.winnerId !== null);
+      }
+
+      case 'swiss': {
+        // Complete when all rounds are done
+        const totalRounds = tournament.formatConfig?.numberOfRounds || 
+          Math.ceil(Math.log2(tournament.players.length));
+        const currentRound = tournament.currentSwissRound || 1;
+        return currentRound >= totalRounds && isRoundComplete(matches, currentRound);
+      }
+
+      case 'group-knockout': {
+        // Complete when knockout phase final has a winner
+        const knockoutMatches = matches.filter(
+          (m) => m.bracket === 'winners' || m.bracket === 'losers' || m.bracket === 'grand-finals'
+        );
+        if (knockoutMatches.length === 0) {
+          return false; // Still in group stage
+        }
+        
+        const knockoutFormat = tournament.formatConfig?.knockoutFormat || 'single-elimination';
+        if (knockoutFormat === 'double-elimination') {
+          const grandFinals = knockoutMatches.filter((m) => m.bracket === 'grand-finals');
+          const gfRound1 = grandFinals.find((m) => m.round === 1);
+          const gfRound2 = grandFinals.find((m) => m.round === 2);
+          if (gfRound1?.winnerId === gfRound1?.player1Id) return true;
+          return !!gfRound2?.winnerId;
+        } else {
+          const maxRound = Math.max(...knockoutMatches.map((m) => m.round), 0);
+          const finalMatch = knockoutMatches.find((m) => m.round === maxRound);
+          return !!finalMatch?.winnerId;
+        }
+      }
+
+      default:
+        return false;
+    }
   };
 
   const updateMatch = (
@@ -200,14 +304,7 @@ export function TournamentProvider({
       }
     }
 
-    // Check if tournament is complete
-    const grandFinals = updatedMatches.filter(
-      (m) => m.bracket === 'grand-finals'
-    );
-    const finalMatch = grandFinals
-      .filter((m) => m.round === 2)
-      .find((m) => m.winnerId);
-    const isComplete = !!finalMatch;
+    const isComplete = checkTournamentComplete(tournament, updatedMatches);
 
     const updated: Tournament = {
       ...tournament,
@@ -228,6 +325,148 @@ export function TournamentProvider({
     }
   };
 
+  const overrideMatchPlayers = (
+    tournamentId: string,
+    matchId: string,
+    player1Id: string | null,
+    player2Id: string | null
+  ) => {
+    const tournament = tournaments.find((t) => t.id === tournamentId);
+    if (!tournament) return;
+
+    const updatedMatches = overrideMatchPlayersLib(
+      tournament.matches,
+      matchId,
+      player1Id,
+      player2Id
+    );
+
+    const updated: Tournament = {
+      ...tournament,
+      matches: updatedMatches,
+    };
+
+    updateTournament(updated);
+    toast.success('Match players updated');
+  };
+
+  const forceMatchWinner = (
+    tournamentId: string,
+    matchId: string,
+    winnerId: string,
+    isForfeited: boolean = false
+  ) => {
+    const tournament = tournaments.find((t) => t.id === tournamentId);
+    if (!tournament) return;
+
+    const updatedMatches = forceMatchWinnerLib(
+      tournament.matches,
+      matchId,
+      winnerId,
+      isForfeited
+    );
+
+    // Update player statistics
+    const updatedMatch = updatedMatches.find((m) => m.id === matchId);
+    if (updatedMatch?.winnerId && updatedMatch.player1Id && updatedMatch.player2Id) {
+      const winner = tournament.players.find((p) => p.id === updatedMatch.winnerId);
+      const loserId =
+        updatedMatch.winnerId === updatedMatch.player1Id
+          ? updatedMatch.player2Id
+          : updatedMatch.player1Id;
+      const loser = tournament.players.find((p) => p.id === loserId);
+
+      if (winner) {
+        winner.wins = (winner.wins || 0) + 1;
+      }
+      if (loser) {
+        loser.losses = (loser.losses || 0) + 1;
+      }
+    }
+
+    const isComplete = checkTournamentComplete(tournament, updatedMatches);
+
+    const updated: Tournament = {
+      ...tournament,
+      players: tournament.players,
+      matches: updatedMatches,
+      status: isComplete ? 'completed' : tournament.status,
+      completedAt: isComplete ? new Date() : tournament.completedAt,
+    };
+
+    updateTournament(updated);
+    toast.success(isForfeited ? 'Match forfeited' : 'Winner declared');
+  };
+
+  const advanceSwissRound = (tournamentId: string) => {
+    const tournament = tournaments.find((t) => t.id === tournamentId);
+    if (!tournament || tournament.format !== 'swiss') return;
+
+    const currentRound = tournament.currentSwissRound || 1;
+    const totalRounds = tournament.formatConfig?.numberOfRounds || 
+      Math.ceil(Math.log2(tournament.players.length));
+
+    // Check if current round is complete
+    if (!isRoundComplete(tournament.matches, currentRound)) {
+      toast.error('Complete all matches in the current round first');
+      return;
+    }
+
+    if (currentRound >= totalRounds) {
+      toast.info('All Swiss rounds are complete');
+      return;
+    }
+
+    // Generate next round matches
+    const newMatches = generateSwissNextRound(
+      tournament.players,
+      tournament.matches,
+      currentRound
+    );
+
+    const updated: Tournament = {
+      ...tournament,
+      matches: [...tournament.matches, ...newMatches],
+      currentSwissRound: currentRound + 1,
+    };
+
+    updateTournament(updated);
+    toast.success(`Round ${currentRound + 1} generated`);
+  };
+
+  const advanceToKnockout = (tournamentId: string) => {
+    const tournament = tournaments.find((t) => t.id === tournamentId);
+    if (!tournament || tournament.format !== 'group-knockout') return;
+
+    // Check if group stage is complete
+    const groupMatches = tournament.matches.filter((m) => m.bracket === 'group');
+    if (!isGroupStageComplete(groupMatches)) {
+      toast.error('Complete all group stage matches first');
+      return;
+    }
+
+    if (tournament.groupStageComplete) {
+      toast.info('Already advanced to knockout stage');
+      return;
+    }
+
+    // Generate knockout bracket from group results
+    const knockoutMatches = generateKnockoutFromGroups(
+      tournament.players,
+      groupMatches,
+      tournament.formatConfig
+    );
+
+    const updated: Tournament = {
+      ...tournament,
+      matches: [...tournament.matches, ...knockoutMatches],
+      groupStageComplete: true,
+    };
+
+    updateTournament(updated);
+    toast.success('Knockout bracket generated');
+  };
+
   return (
     <TournamentContext.Provider
       value={{
@@ -240,6 +479,10 @@ export function TournamentProvider({
         startTournament,
         updateMatch,
         deleteTournament,
+        overrideMatchPlayers,
+        forceMatchWinner,
+        advanceSwissRound,
+        advanceToKnockout,
       }}
     >
       {children}

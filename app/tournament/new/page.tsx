@@ -8,19 +8,53 @@ import { useTournament } from '@/contexts/TournamentContext';
 import { PlayerForm } from '@/components/player/PlayerForm';
 import { PlayerList } from '@/components/player/PlayerList';
 import { Button } from '@/components/ui/Button';
-import type { Player } from '@/types/tournament';
+import type { Player, TournamentFormat, TournamentFormatConfig } from '@/types/tournament';
 import { cn } from '@/lib/utils';
 import { loadPlayerLists, savePlayerList } from '@/lib/storage';
 import type { PlayerList as SavedPlayerList } from '@/types/tournament';
+
+const FORMAT_OPTIONS: { value: TournamentFormat; label: string; description: string }[] = [
+  {
+    value: 'single-elimination',
+    label: 'Single Elimination',
+    description: 'One loss and you\'re out. Fast and simple.',
+  },
+  {
+    value: 'double-elimination',
+    label: 'Double Elimination',
+    description: 'Two losses to be eliminated. Includes losers bracket.',
+  },
+  {
+    value: 'round-robin',
+    label: 'Round Robin',
+    description: 'Everyone plays everyone. Best for smaller groups.',
+  },
+  {
+    value: 'swiss',
+    label: 'Swiss System',
+    description: 'Players matched by similar records each round.',
+  },
+  {
+    value: 'group-knockout',
+    label: 'Group Stage + Knockout',
+    description: 'Pool play followed by elimination bracket.',
+  },
+];
 
 export default function NewTournamentPage() {
   const router = useRouter();
   const { createTournament, startTournament } = useTournament();
   const [name, setName] = useState('');
   const [players, setPlayers] = useState<Player[]>([]);
+  const [format, setFormat] = useState<TournamentFormat>('double-elimination');
+  const [formatConfig, setFormatConfig] = useState<TournamentFormatConfig>({});
   const [savedPlayerLists, setSavedPlayerLists] = useState<SavedPlayerList[]>([]);
   const [showSaveListModal, setShowSaveListModal] = useState(false);
   const [listNameToSave, setListNameToSave] = useState('');
+
+  // Calculate default config values based on player count
+  const defaultSwissRounds = Math.max(3, Math.ceil(Math.log2(players.length || 8)));
+  const defaultGroupCount = Math.min(4, Math.max(2, Math.floor(players.length / 3)));
 
   const handleAddPlayer = (player: Player) => {
     const updatedPlayers = [...players, { ...player, seed: players.length + 1 }];
@@ -50,17 +84,28 @@ export default function NewTournamentPage() {
     toast.success('Players shuffled!');
   };
 
+  const getMinPlayers = (): number => {
+    switch (format) {
+      case 'group-knockout':
+        return 4;
+      default:
+        return 2;
+    }
+  };
+
   const handleCreate = () => {
     if (!name.trim()) {
       toast.error('Please enter a tournament name');
       return;
     }
-    if (players.length < 2) {
-      toast.error('Please add at least 2 players');
+    const minPlayers = getMinPlayers();
+    if (players.length < minPlayers) {
+      toast.error(`Please add at least ${minPlayers} players for this format`);
       return;
     }
 
-    const tournament = createTournament(name.trim(), players);
+    const config = buildFormatConfig();
+    const tournament = createTournament(name.trim(), players, format, config);
     router.push(`/tournament/${tournament.id}`);
   };
 
@@ -69,14 +114,33 @@ export default function NewTournamentPage() {
       toast.error('Please enter a tournament name');
       return;
     }
-    if (players.length < 2) {
-      toast.error('Please add at least 2 players');
+    const minPlayers = getMinPlayers();
+    if (players.length < minPlayers) {
+      toast.error(`Please add at least ${minPlayers} players for this format`);
       return;
     }
 
-    const tournament = createTournament(name.trim(), players);
+    const config = buildFormatConfig();
+    const tournament = createTournament(name.trim(), players, format, config);
     startTournament(tournament.id);
     router.push(`/tournament/${tournament.id}`);
+  };
+
+  const buildFormatConfig = (): TournamentFormatConfig | undefined => {
+    switch (format) {
+      case 'swiss':
+        return {
+          numberOfRounds: formatConfig.numberOfRounds || defaultSwissRounds,
+        };
+      case 'group-knockout':
+        return {
+          groupCount: formatConfig.groupCount || defaultGroupCount,
+          advancePerGroup: formatConfig.advancePerGroup || 2,
+          knockoutFormat: formatConfig.knockoutFormat || 'single-elimination',
+        };
+      default:
+        return undefined;
+    }
   };
 
   useEffect(() => {
@@ -145,6 +209,126 @@ export default function NewTournamentPage() {
               'dark:border-gray-600 dark:bg-gray-700'
             )}
           />
+        </div>
+
+        {/* Format Selector */}
+        <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+          <h2 className="mb-4 text-2xl font-bold">Tournament Format</h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {FORMAT_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => setFormat(option.value)}
+                className={cn(
+                  'rounded-lg border-2 p-4 text-left transition-all',
+                  format === option.value
+                    ? 'border-green-500 bg-green-50 dark:border-green-400 dark:bg-green-900/20'
+                    : 'border-gray-200 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-500'
+                )}
+              >
+                <div className="font-semibold">{option.label}</div>
+                <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                  {option.description}
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* Format-specific options */}
+          {format === 'swiss' && (
+            <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700/50">
+              <label className="mb-2 block text-sm font-medium">
+                Number of Rounds
+              </label>
+              <input
+                type="number"
+                min={2}
+                max={10}
+                value={formatConfig.numberOfRounds || defaultSwissRounds}
+                onChange={(e) =>
+                  setFormatConfig({
+                    ...formatConfig,
+                    numberOfRounds: parseInt(e.target.value) || defaultSwissRounds,
+                  })
+                }
+                className={cn(
+                  'w-32 rounded border border-gray-300 px-3 py-2',
+                  'dark:border-gray-600 dark:bg-gray-700'
+                )}
+              />
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Recommended: {defaultSwissRounds} rounds for {players.length || '?'} players
+              </p>
+            </div>
+          )}
+
+          {format === 'group-knockout' && (
+            <div className="mt-6 space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700/50">
+              <div>
+                <label className="mb-2 block text-sm font-medium">
+                  Number of Groups
+                </label>
+                <input
+                  type="number"
+                  min={2}
+                  max={8}
+                  value={formatConfig.groupCount || defaultGroupCount}
+                  onChange={(e) =>
+                    setFormatConfig({
+                      ...formatConfig,
+                      groupCount: parseInt(e.target.value) || defaultGroupCount,
+                    })
+                  }
+                  className={cn(
+                    'w-32 rounded border border-gray-300 px-3 py-2',
+                    'dark:border-gray-600 dark:bg-gray-700'
+                  )}
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium">
+                  Players Advancing Per Group
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={4}
+                  value={formatConfig.advancePerGroup || 2}
+                  onChange={(e) =>
+                    setFormatConfig({
+                      ...formatConfig,
+                      advancePerGroup: parseInt(e.target.value) || 2,
+                    })
+                  }
+                  className={cn(
+                    'w-32 rounded border border-gray-300 px-3 py-2',
+                    'dark:border-gray-600 dark:bg-gray-700'
+                  )}
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium">
+                  Knockout Format
+                </label>
+                <select
+                  value={formatConfig.knockoutFormat || 'single-elimination'}
+                  onChange={(e) =>
+                    setFormatConfig({
+                      ...formatConfig,
+                      knockoutFormat: e.target.value as 'single-elimination' | 'double-elimination',
+                    })
+                  }
+                  className={cn(
+                    'rounded border border-gray-300 px-3 py-2',
+                    'dark:border-gray-600 dark:bg-gray-700'
+                  )}
+                >
+                  <option value="single-elimination">Single Elimination</option>
+                  <option value="double-elimination">Double Elimination</option>
+                </select>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">

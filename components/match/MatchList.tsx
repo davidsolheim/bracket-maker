@@ -7,6 +7,7 @@ interface MatchListProps {
   matches: Match[];
   players: Player[];
   onMatchClick: (match: Match) => void;
+  onOverrideClick?: (match: Match) => void;
   activeMatchId?: string;
 }
 
@@ -14,6 +15,7 @@ export function MatchList({
   matches,
   players,
   onMatchClick,
+  onOverrideClick,
   activeMatchId,
 }: MatchListProps) {
   const groupedMatches = matches.reduce(
@@ -69,6 +71,7 @@ export function MatchList({
                           match={match}
                           players={players}
                           onScoreClick={() => onMatchClick(match)}
+                          onOverrideClick={onOverrideClick ? () => onOverrideClick(match) : undefined}
                           isActive={activeMatchId === match.id}
                         />
                       ))}

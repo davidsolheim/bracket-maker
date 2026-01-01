@@ -6,6 +6,7 @@ import { useTournament } from '@/contexts/TournamentContext';
 import { BracketTree } from '@/components/bracket/BracketTree';
 import { MatchList } from '@/components/match/MatchList';
 import { ScoreModal } from '@/components/match/ScoreModal';
+import { MatchOverrideModal } from '@/components/match/MatchOverrideModal';
 import { ViewToggle } from '@/components/layout/ViewToggle';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
@@ -20,16 +21,34 @@ import { cn } from '@/lib/utils';
 
 type ViewType = 'bracket' | 'list';
 
+const FORMAT_LABELS: Record<string, string> = {
+  'single-elimination': 'Single Elimination',
+  'double-elimination': 'Double Elimination',
+  'round-robin': 'Round Robin',
+  'swiss': 'Swiss System',
+  'group-knockout': 'Group Stage + Knockout',
+};
+
 export default function TournamentPage() {
   const params = useParams();
   const router = useRouter();
-  const { tournaments, setCurrentTournament, updateMatch, startTournament, isLoading } =
-    useTournament();
+  const { 
+    tournaments, 
+    setCurrentTournament, 
+    updateMatch, 
+    startTournament, 
+    isLoading, 
+    overrideMatchPlayers, 
+    forceMatchWinner,
+    advanceSwissRound,
+    advanceToKnockout,
+  } = useTournament();
   const [view, setView] = useState<ViewType>('bracket');
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
   const [isReScoring, setIsReScoring] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false);
   const [isExportingImage, setIsExportingImage] = useState(false);
   const bracketRef = useRef<HTMLDivElement>(null);
 
@@ -108,6 +127,33 @@ export default function TournamentPage() {
     }
   };
 
+  const handleOverrideClick = (match: Match) => {
+    setSelectedMatch(match);
+    setIsOverrideModalOpen(true);
+  };
+
+  const handleSwapPlayers = (player1Id: string | null, player2Id: string | null) => {
+    if (!selectedMatch) return;
+    overrideMatchPlayers(tournament.id, selectedMatch.id, player1Id, player2Id);
+    setSelectedMatch(null);
+    setIsOverrideModalOpen(false);
+  };
+
+  const handleForceWinner = (winnerId: string, isForfeited: boolean) => {
+    if (!selectedMatch) return;
+    forceMatchWinner(tournament.id, selectedMatch.id, winnerId, isForfeited);
+    setSelectedMatch(null);
+    setIsOverrideModalOpen(false);
+  };
+
+  const handleAdvanceSwissRound = () => {
+    advanceSwissRound(tournament.id);
+  };
+
+  const handleAdvanceToKnockout = () => {
+    advanceToKnockout(tournament.id);
+  };
+
   const handleExportImage = async () => {
     if (!bracketRef.current) return;
 
@@ -121,15 +167,21 @@ export default function TournamentPage() {
     }
   };
 
+  const formatLabel = FORMAT_LABELS[tournament.format] || tournament.format;
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <main className="mx-auto max-w-7xl px-4 py-8">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold">{tournament.name}</h1>
-            <p className="mt-2 text-gray-600 dark:text-gray-400">
-              Status: {tournament.status}
-            </p>
+            <div className="mt-2 flex items-center gap-3 text-gray-600 dark:text-gray-400">
+              <span>Status: {tournament.status}</span>
+              <span className="text-gray-300 dark:text-gray-600">|</span>
+              <span className="rounded bg-gray-100 px-2 py-0.5 text-sm dark:bg-gray-700">
+                {formatLabel}
+              </span>
+            </div>
           </div>
           <div className="flex gap-2">
             {(tournament.status === 'active' ||
@@ -191,7 +243,14 @@ export default function TournamentPage() {
                 ref={bracketRef}
                 matches={tournament.matches}
                 players={tournament.players}
+                format={tournament.format}
+                formatConfig={tournament.formatConfig}
+                currentSwissRound={tournament.currentSwissRound}
+                groupStageComplete={tournament.groupStageComplete}
                 onMatchClick={handleMatchClick}
+                onOverrideClick={handleOverrideClick}
+                onAdvanceSwissRound={handleAdvanceSwissRound}
+                onAdvanceToKnockout={handleAdvanceToKnockout}
                 activeMatchId={selectedMatch?.id}
               />
             ) : (
@@ -199,6 +258,7 @@ export default function TournamentPage() {
                 matches={tournament.matches}
                 players={tournament.players}
                 onMatchClick={handleMatchClick}
+                onOverrideClick={handleOverrideClick}
                 activeMatchId={selectedMatch?.id}
               />
             )}
@@ -212,7 +272,12 @@ export default function TournamentPage() {
               ref={bracketRef}
               matches={tournament.matches}
               players={tournament.players}
+              format={tournament.format}
+              formatConfig={tournament.formatConfig}
+              currentSwissRound={tournament.currentSwissRound}
+              groupStageComplete={tournament.groupStageComplete}
               onMatchClick={handleMatchClick}
+              onOverrideClick={handleOverrideClick}
               activeMatchId={selectedMatch?.id}
             />
           </>
@@ -267,6 +332,20 @@ export default function TournamentPage() {
                   }
                 : undefined
             }
+          />
+        )}
+
+        {selectedMatch && (
+          <MatchOverrideModal
+            isOpen={isOverrideModalOpen}
+            onClose={() => {
+              setIsOverrideModalOpen(false);
+              setSelectedMatch(null);
+            }}
+            match={selectedMatch}
+            players={tournament.players}
+            onSwapPlayers={handleSwapPlayers}
+            onForceWinner={handleForceWinner}
           />
         )}
       </main>

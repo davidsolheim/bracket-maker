@@ -24,7 +24,8 @@ interface TournamentContextType {
     tournamentId: string,
     matchId: string,
     player1Score: number,
-    player2Score: number
+    player2Score: number,
+    isReScoring?: boolean
   ) => void;
   deleteTournament: (id: string) => void;
 }

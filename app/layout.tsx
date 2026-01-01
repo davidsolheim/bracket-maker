@@ -19,8 +19,23 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Bracket Maker - Tournament Bracket Manager",
+  title: "Bracket Magic - Tournament Bracket Manager",
   description: "Create and manage double elimination tournament brackets",
+  icons: {
+    icon: "/bracket-magic-icon.png",
+    apple: "/bracket-magic-icon.png",
+  },
+  openGraph: {
+    title: "Bracket Magic - Tournament Bracket Manager",
+    description: "Create and manage double elimination tournament brackets",
+    images: ["/bracket-magic-banner.png"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Bracket Magic - Tournament Bracket Manager",
+    description: "Create and manage double elimination tournament brackets",
+    images: ["/bracket-magic-banner.png"],
+  },
 };
 
 export default function RootLayout({

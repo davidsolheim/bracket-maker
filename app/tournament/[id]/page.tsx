@@ -32,16 +32,17 @@ const FORMAT_LABELS: Record<string, string> = {
 export default function TournamentPage() {
   const params = useParams();
   const router = useRouter();
-  const { 
-    tournaments, 
-    setCurrentTournament, 
-    updateMatch, 
-    startTournament, 
-    isLoading, 
-    overrideMatchPlayers, 
+  const {
+    tournaments,
+    setCurrentTournament,
+    updateMatch,
+    startTournament,
+    isLoading,
+    overrideMatchPlayers,
     forceMatchWinner,
     advanceSwissRound,
     advanceToKnockout,
+    deleteTournament,
   } = useTournament();
   const [view, setView] = useState<ViewType>('bracket');
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
@@ -50,6 +51,7 @@ export default function TournamentPage() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false);
   const [isExportingImage, setIsExportingImage] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const bracketRef = useRef<HTMLDivElement>(null);
 
   const tournamentId = params.id as string;
@@ -154,6 +156,11 @@ export default function TournamentPage() {
     advanceToKnockout(tournament.id);
   };
 
+  const handleDeleteTournament = () => {
+    deleteTournament(tournament.id);
+    router.push('/');
+  };
+
   const handleExportImage = async () => {
     if (!bracketRef.current) return;
 
@@ -219,6 +226,13 @@ export default function TournamentPage() {
                 Start Tournament
               </Button>
             )}
+            <Button
+              onClick={() => setShowDeleteModal(true)}
+              variant="danger"
+              size="sm"
+            >
+              Delete Tournament
+            </Button>
           </div>
         </div>
 
@@ -348,6 +362,33 @@ export default function TournamentPage() {
             onForceWinner={handleForceWinner}
           />
         )}
+
+        <Modal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          title="Delete Tournament"
+          size="md"
+        >
+          <p className="mb-4 text-gray-600 dark:text-gray-400">
+            Are you sure you want to delete "{tournament.name}"? This action cannot be undone and will permanently remove all tournament data including matches, players, and results.
+          </p>
+          <div className="flex gap-3">
+            <Button
+              onClick={() => setShowDeleteModal(false)}
+              variant="secondary"
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDeleteTournament}
+              variant="danger"
+              className="flex-1"
+            >
+              Delete Tournament
+            </Button>
+          </div>
+        </Modal>
       </main>
     </div>
   );

@@ -3,13 +3,40 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f5f5f4;
-  --foreground: #1c1917;
-  --pool-green: #166534;
-  --pool-green-light: #22c55e;
-  --pool-green-dark: #14532d;
-  --wood-brown: #78716c;
-  --wood-light: #a8a29e;
+  /* Esports Neon Color Palette */
+  --neon-cyan: #00f5ff;
+  --neon-cyan-dim: #00a8b3;
+  --neon-magenta: #ff00ff;
+  --neon-magenta-dim: #b300b3;
+  --neon-green: #39ff14;
+  --neon-green-dim: #28b30e;
+  --neon-orange: #ff6b00;
+  --neon-gold: #ffd700;
+  --neon-purple: #bf00ff;
+  
+  /* Background Colors */
+  --bg-dark: #0a0a0f;
+  --bg-darker: #050508;
+  --bg-card: #12121a;
+  --bg-card-hover: #1a1a25;
+  --bg-elevated: #18182a;
+  
+  /* Border & Glow */
+  --border-dim: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(0, 245, 255, 0.3);
+  --border-glow-magenta: rgba(255, 0, 255, 0.3);
+  
+  /* Text */
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0b0;
+  --text-muted: #606070;
+  
+  /* Legacy support */
+  --background: #0a0a0f;
+  --foreground: #ffffff;
+  --pool-green: #39ff14;
+  --pool-green-light: #50ff30;
+  --pool-green-dark: #28b30e;
 }
 
 @theme inline {
@@ -17,56 +44,30 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
+  --font-heading: var(--font-heading);
 }
 
+/* Dark mode is now default - esports aesthetic */
 .dark {
-  --background: #0c0a09;
-  --foreground: #fafaf9;
-  --pool-green: #22c55e;
-  --pool-green-light: #4ade80;
-  --pool-green-dark: #16a34a;
+  --background: #0a0a0f;
+  --foreground: #ffffff;
 }
 
 body {
-  background: var(--background);
+  background: var(--bg-dark);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   background-image: 
-    radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.02) 1px, transparent 0);
-  background-size: 20px 20px;
+    radial-gradient(ellipse at 50% 0%, rgba(0, 245, 255, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 0% 100%, rgba(255, 0, 255, 0.02) 0%, transparent 40%),
+    radial-gradient(circle at 2px 2px, rgba(255, 255, 255, 0.02) 1px, transparent 0);
+  background-size: 100% 100%, 100% 100%, 24px 24px;
 }
 
-/* Pool table felt texture effect */
-.pool-surface {
-  background: linear-gradient(
-    135deg,
-    var(--pool-green-dark) 0%,
-    var(--pool-green) 50%,
-    var(--pool-green-dark) 100%
-  );
-  position: relative;
-}
-
-.pool-surface::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: 
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0, 0, 0, 0.03) 2px,
-      rgba(0, 0, 0, 0.03) 4px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 2px,
-      rgba(0, 0, 0, 0.03) 2px,
-      rgba(0, 0, 0, 0.03) 4px
-    );
-  pointer-events: none;
+/* Heading font */
+h1, h2, h3, h4, h5, h6, .heading {
+  font-family: var(--font-heading), var(--font-sans), system-ui, sans-serif;
+  letter-spacing: 0.02em;
 }
 
 /* Score numbers use monospace font */
@@ -76,11 +77,274 @@ body {
   letter-spacing: 0.05em;
 }
 
+/* Neon Glow Utilities */
+.glow-cyan {
+  box-shadow: 
+    0 0 5px var(--neon-cyan),
+    0 0 10px rgba(0, 245, 255, 0.5),
+    0 0 20px rgba(0, 245, 255, 0.3),
+    0 0 40px rgba(0, 245, 255, 0.1);
+}
+
+.glow-magenta {
+  box-shadow: 
+    0 0 5px var(--neon-magenta),
+    0 0 10px rgba(255, 0, 255, 0.5),
+    0 0 20px rgba(255, 0, 255, 0.3),
+    0 0 40px rgba(255, 0, 255, 0.1);
+}
+
+.glow-green {
+  box-shadow: 
+    0 0 5px var(--neon-green),
+    0 0 10px rgba(57, 255, 20, 0.5),
+    0 0 20px rgba(57, 255, 20, 0.3),
+    0 0 40px rgba(57, 255, 20, 0.1);
+}
+
+.glow-gold {
+  box-shadow: 
+    0 0 5px var(--neon-gold),
+    0 0 10px rgba(255, 215, 0, 0.5),
+    0 0 20px rgba(255, 215, 0, 0.3),
+    0 0 40px rgba(255, 215, 0, 0.1);
+}
+
+.text-glow-cyan {
+  text-shadow: 
+    0 0 5px var(--neon-cyan),
+    0 0 10px rgba(0, 245, 255, 0.5),
+    0 0 20px rgba(0, 245, 255, 0.3);
+}
+
+.text-glow-gold {
+  text-shadow: 
+    0 0 5px var(--neon-gold),
+    0 0 10px rgba(255, 215, 0, 0.5),
+    0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, var(--neon-cyan) 0%, var(--neon-magenta) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-gold {
+  background: linear-gradient(135deg, var(--neon-gold) 0%, var(--neon-orange) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glassmorphism Card */
+.glass-card {
+  background: rgba(18, 18, 26, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-dim);
+}
+
+.glass-card-hover:hover {
+  background: rgba(26, 26, 37, 0.9);
+  border-color: var(--border-glow);
+}
+
+/* Esports Card Style */
+.esports-card {
+  background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-darker) 100%);
+  border: 1px solid var(--border-dim);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.esports-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(0, 245, 255, 0.2) 0%, transparent 50%, rgba(255, 0, 255, 0.1) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.esports-card:hover::before {
+  background: linear-gradient(135deg, rgba(0, 245, 255, 0.4) 0%, transparent 50%, rgba(255, 0, 255, 0.2) 100%);
+}
+
+/* Animated Border */
+@keyframes border-glow-pulse {
+  0%, 100% { 
+    border-color: rgba(0, 245, 255, 0.3);
+    box-shadow: 0 0 10px rgba(0, 245, 255, 0.1);
+  }
+  50% { 
+    border-color: rgba(0, 245, 255, 0.6);
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.3);
+  }
+}
+
+.border-glow-animate {
+  animation: border-glow-pulse 2s ease-in-out infinite;
+}
+
+/* Winner Pulse Animation */
+@keyframes winner-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(57, 255, 20, 0.4);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 30px 10px rgba(57, 255, 20, 0.2);
+  }
+}
+
+.winner-pulse {
+  animation: winner-pulse 2s ease-in-out infinite;
+}
+
+/* Champion Glow Animation */
+@keyframes champion-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 10px var(--neon-gold)) drop-shadow(0 0 30px rgba(255, 215, 0, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 20px var(--neon-gold)) drop-shadow(0 0 50px rgba(255, 215, 0, 0.5));
+  }
+}
+
+.champion-glow {
+  animation: champion-glow 1.5s ease-in-out infinite;
+}
+
+/* Flowing Edge Animation (for React Flow) */
+@keyframes edge-flow {
+  0% {
+    stroke-dashoffset: 24;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.edge-animated {
+  stroke-dasharray: 8 4;
+  animation: edge-flow 1s linear infinite;
+}
+
+.edge-winner {
+  stroke-dasharray: none;
+  filter: drop-shadow(0 0 4px var(--neon-green));
+}
+
+/* Ripple Effect */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 245, 255, 0.3) 0%, transparent 70%);
+  animation: ripple 0.6s linear forwards;
+}
+
+/* Score Flash Animation */
+@keyframes score-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.score-update {
+  animation: score-flash 0.3s ease-in-out;
+}
+
+/* Spotlight Effect for Celebrations */
+@keyframes spotlight-pulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.1);
+  }
+}
+
+.spotlight {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at 50% 30%, rgba(255, 215, 0, 0.15) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 40;
+  animation: spotlight-pulse 2s ease-in-out infinite;
+}
+
+/* React Flow Overrides */
+.react-flow__background {
+  background-color: var(--bg-dark) !important;
+}
+
+.react-flow__minimap {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-dim) !important;
+  border-radius: 8px !important;
+}
+
+.react-flow__controls {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-dim) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+.react-flow__controls-button {
+  background: var(--bg-card) !important;
+  border-color: var(--border-dim) !important;
+  color: var(--text-secondary) !important;
+}
+
+.react-flow__controls-button:hover {
+  background: var(--bg-card-hover) !important;
+  color: var(--neon-cyan) !important;
+}
+
+.react-flow__edge-path {
+  stroke: var(--text-muted);
+  stroke-width: 2;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--neon-cyan);
+}
+
 /* Smooth transitions for interactive elements */
 * {
-  transition-property: color, background-color, border-color;
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
+}
+
+/* Disable transitions for React Flow for performance */
+.react-flow__node,
+.react-flow__edge,
+.react-flow__handle {
+  transition: none;
 }
 
 /* Custom scrollbar styling */
@@ -90,22 +354,110 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--bg-darker);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--bg-elevated);
   border-radius: 4px;
+  border: 1px solid var(--border-dim);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--bg-card-hover);
+  border-color: var(--border-glow);
 }
 
-.dark ::-webkit-scrollbar-thumb {
-  background: #475569;
+/* Button Base Styles */
+.btn-esports {
+  position: relative;
+  background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-card) 100%);
+  border: 1px solid var(--border-dim);
+  color: var(--text-primary);
+  font-family: var(--font-heading), var(--font-sans), sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  overflow: hidden;
 }
 
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+.btn-esports::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 245, 255, 0.1) 50%, transparent 100%);
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+}
+
+.btn-esports:hover::before {
+  transform: translateX(100%);
+}
+
+.btn-esports:hover {
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 15px rgba(0, 245, 255, 0.2);
+}
+
+.btn-esports-primary {
+  background: linear-gradient(180deg, var(--neon-cyan-dim) 0%, #007a80 100%);
+  border-color: var(--neon-cyan);
+}
+
+.btn-esports-primary:hover {
+  background: linear-gradient(180deg, var(--neon-cyan) 0%, var(--neon-cyan-dim) 100%);
+  box-shadow: 0 0 20px rgba(0, 245, 255, 0.4);
+}
+
+.btn-esports-danger {
+  background: linear-gradient(180deg, #8b0000 0%, #5c0000 100%);
+  border-color: #ff4444;
+}
+
+.btn-esports-danger:hover {
+  background: linear-gradient(180deg, #aa0000 0%, #8b0000 100%);
+  border-color: #ff6666;
+  box-shadow: 0 0 15px rgba(255, 68, 68, 0.3);
+}
+
+/* Trophy Animation */
+@keyframes trophy-bounce {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-10px) rotate(-5deg); }
+  75% { transform: translateY(-10px) rotate(5deg); }
+}
+
+.trophy-animate {
+  animation: trophy-bounce 1s ease-in-out infinite;
+}
+
+/* Confetti Burst Origin */
+@keyframes burst {
+  0% { 
+    transform: scale(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% { 
+    transform: scale(2) rotate(180deg);
+    opacity: 0;
+  }
+}
+
+/* Particle Trail */
+@keyframes particle-trail {
+  0% {
+    opacity: 0;
+    transform: translateY(50px) scale(0);
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-50px) scale(1);
+  }
+}
+
+.particle {
+  animation: particle-trail 1.5s ease-out forwards;
 }

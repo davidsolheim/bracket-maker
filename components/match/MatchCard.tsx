@@ -46,31 +46,58 @@ export function MatchCard({
     }
   }, [isComplete, winner, controls]);
 
+  const getBracketLabel = () => {
+    switch (match.bracket) {
+      case 'winners': return 'Winners';
+      case 'losers': return 'Losers';
+      case 'grand-finals': return 'Grand Finals';
+      case 'round-robin': return 'Round Robin';
+      case 'swiss': return 'Swiss';
+      case 'group': return 'Group';
+      default: return '';
+    }
+  };
+
   return (
     <motion.div
       animate={controls}
       whileHover={(canPlay || canEdit) ? { scale: 1.02 } : {}}
       className={cn(
-        'rounded-lg border-2 p-3 transition-all shadow-sm',
-        isActive
-          ? 'border-green-500 bg-green-50 shadow-md dark:bg-green-950/20'
-          : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800',
-        (canPlay || canEdit) && 'cursor-pointer hover:border-green-400 hover:shadow-md',
-        isComplete && 'ring-2 ring-green-500/20',
+        'rounded-xl transition-all duration-200 shadow-lg cursor-pointer select-none',
+        // Esports card styling
+        'esports-card',
+        'p-3',
+        // Active state
+        isActive && 'border-glow-animate ring-1 ring-[var(--neon-cyan)]',
+        // Complete state
+        isComplete && 'ring-1 ring-[var(--neon-green)]/30',
+        // Interactive states
+        (canPlay || canEdit) && 'hover:border-[var(--neon-cyan)]/50 hover:shadow-[0_0_20px_rgba(0,245,255,0.15)]',
         compact && 'p-2 text-sm'
       )}
       onClick={(canPlay || canEdit) ? onScoreClick : undefined}
     >
-      <div className="mb-1 flex items-center justify-between">
-        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-          {match.bracket === 'winners' && 'Winners'}
-          {match.bracket === 'losers' && 'Losers'}
-          {match.bracket === 'grand-finals' && 'Grand Finals'} - Round{' '}
-          {match.round}
-        </span>
+      {/* Header */}
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className={cn(
+            'text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide',
+            match.bracket === 'winners' && 'bg-[var(--neon-green)]/20 text-[var(--neon-green)]',
+            match.bracket === 'losers' && 'bg-[var(--neon-magenta)]/20 text-[var(--neon-magenta)]',
+            match.bracket === 'grand-finals' && 'bg-[var(--neon-gold)]/20 text-[var(--neon-gold)]',
+            (match.bracket === 'round-robin' || match.bracket === 'swiss' || match.bracket === 'group') && 
+              'bg-[var(--neon-cyan)]/20 text-[var(--neon-cyan)]'
+          )}>
+            {getBracketLabel()}
+          </span>
+          <span className="text-xs text-[var(--text-muted)]">
+            Round {match.round}
+          </span>
+        </div>
+        
         <div className="flex items-center gap-1">
           {match.isForfeited && (
-            <span className="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+            <span className="rounded bg-orange-500/20 px-1.5 py-0.5 text-[10px] font-bold text-orange-400">
               FF
             </span>
           )}
@@ -80,7 +107,7 @@ export function MatchCard({
                 e.stopPropagation();
                 onOverrideClick();
               }}
-              className="rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300 cursor-pointer"
+              className="rounded p-1 text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--neon-cyan)] transition-colors cursor-pointer"
               title="Match override options"
             >
               <svg
@@ -107,67 +134,88 @@ export function MatchCard({
         </div>
       </div>
 
-      <div className="space-y-1">
+      {/* Players */}
+      <div className="space-y-1.5">
+        {/* Player 1 */}
         <motion.div
           initial={{ opacity: 1 }}
           animate={{
-            opacity: winner?.id === player1?.id ? 1 : isComplete ? 0.6 : 1,
+            opacity: winner?.id === player1?.id ? 1 : isComplete ? 0.5 : 1,
           }}
           transition={{ duration: 0.3 }}
           className={cn(
-            'flex items-center justify-between rounded px-2 py-1',
+            'flex items-center justify-between rounded-lg px-3 py-2',
             winner?.id === player1?.id
-              ? 'bg-green-100 dark:bg-green-900/30'
-              : 'bg-gray-50 dark:bg-gray-700/50'
+              ? 'bg-[var(--neon-green)]/15 border border-[var(--neon-green)]/30'
+              : 'bg-white/5'
           )}
         >
           <span
             className={cn(
-              'font-medium',
-              winner?.id === player1?.id && 'text-green-700 dark:text-green-300'
+              'font-medium truncate max-w-[150px]',
+              winner?.id === player1?.id && 'text-[var(--neon-green)]',
+              !player1 && 'text-[var(--text-muted)] italic'
             )}
           >
             {getPlayerName(player1)}
           </span>
           {match.player1Score !== null && (
-            <span className="score font-bold">{match.player1Score}</span>
+            <span className={cn(
+              'score font-bold text-lg min-w-[28px] text-right',
+              winner?.id === player1?.id && 'text-[var(--neon-green)]'
+            )}>
+              {match.player1Score}
+            </span>
           )}
         </motion.div>
 
+        {/* VS divider */}
+        <div className="flex items-center justify-center">
+          <span className="text-[10px] text-[var(--text-muted)] font-bold tracking-widest">VS</span>
+        </div>
+
+        {/* Player 2 */}
         <motion.div
           initial={{ opacity: 1 }}
           animate={{
-            opacity: winner?.id === player2?.id ? 1 : isComplete ? 0.6 : 1,
+            opacity: winner?.id === player2?.id ? 1 : isComplete ? 0.5 : 1,
           }}
           transition={{ duration: 0.3 }}
           className={cn(
-            'flex items-center justify-between rounded px-2 py-1',
+            'flex items-center justify-between rounded-lg px-3 py-2',
             winner?.id === player2?.id
-              ? 'bg-green-100 dark:bg-green-900/30'
-              : 'bg-gray-50 dark:bg-gray-700/50'
+              ? 'bg-[var(--neon-green)]/15 border border-[var(--neon-green)]/30'
+              : 'bg-white/5'
           )}
         >
           <span
             className={cn(
-              'font-medium',
-              winner?.id === player2?.id && 'text-green-700 dark:text-green-300'
+              'font-medium truncate max-w-[150px]',
+              winner?.id === player2?.id && 'text-[var(--neon-green)]',
+              !player2 && 'text-[var(--text-muted)] italic'
             )}
           >
             {getPlayerName(player2)}
           </span>
           {match.player2Score !== null && (
-            <span className="score font-bold">{match.player2Score}</span>
+            <span className={cn(
+              'score font-bold text-lg min-w-[28px] text-right',
+              winner?.id === player2?.id && 'text-[var(--neon-green)]'
+            )}>
+              {match.player2Score}
+            </span>
           )}
         </motion.div>
       </div>
 
+      {/* Action hints */}
       {canPlay && (
-        <div className="mt-2 text-center text-xs text-green-600 dark:text-green-400">
+        <div className="mt-3 text-center text-xs text-[var(--neon-cyan)] font-medium">
           Click to enter score
         </div>
       )}
       {canEdit && (
-        <div className="mt-2 flex items-center justify-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+        <div className="mt-3 flex items-center justify-center gap-1 text-xs text-[var(--text-muted)]">
           <svg
             className="h-3 w-3"
             fill="none"

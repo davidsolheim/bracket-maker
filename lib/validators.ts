@@ -32,6 +32,8 @@ export const MatchSchema = z.object({
 
 export const TournamentFormatConfigSchema = z.object({
   numberOfRounds: z.number().int().positive().optional(),
+  winsToQualify: z.number().int().positive().optional(),
+  qualifyingPlayers: z.number().int().positive().optional(),
   groupCount: z.number().int().positive().optional(),
   playersPerGroup: z.number().int().positive().optional(),
   advancePerGroup: z.number().int().positive().optional(),
@@ -49,6 +51,7 @@ export const TournamentSchema = z.object({
   createdAt: z.coerce.date(),
   completedAt: z.coerce.date().nullable(),
   groupStageComplete: z.boolean().optional(),
+  swissQualificationComplete: z.boolean().optional(),
   currentSwissRound: z.number().int().positive().optional(),
 });
 

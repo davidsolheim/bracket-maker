@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
+import { Rajdhani, Chakra_Petch, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { TournamentProvider } from "@/contexts/TournamentContext";
 import { Header } from "@/components/layout/Header";
@@ -7,7 +7,13 @@ import { Footer } from "@/components/layout/Footer";
 import { Toaster } from "sonner";
 import { ErrorBoundaryWrapper } from "@/components/ErrorBoundaryWrapper";
 
-const jakartaSans = Plus_Jakarta_Sans({
+const rajdhani = Rajdhani({
+  variable: "--font-heading",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const chakraPetch = Chakra_Petch({
   variable: "--font-sans",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -45,9 +51,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className="h-full dark">
       <body
-        className={`${jakartaSans.variable} ${jetbrainsMono.variable} antialiased h-full flex flex-col`}
+        className={`${rajdhani.variable} ${chakraPetch.variable} ${jetbrainsMono.variable} antialiased h-full flex flex-col`}
       >
         <ErrorBoundaryWrapper>
           <TournamentProvider>

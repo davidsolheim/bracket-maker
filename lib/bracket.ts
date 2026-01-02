@@ -529,6 +529,10 @@ export function generateSwissNextRound(
   const isQualificationMode = config?.winsToQualify !== undefined;
   const winsToQualify = config?.winsToQualify || 3;
 
+  // #region agent log
+  fetch('http://127.0.0.1:7254/ingest/87bd214f-3162-4f5e-83f2-30c0aab71339',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/bracket.ts:530',message:'Player records computed',data:{totalPlayers:players.length,isQualificationMode,winsToQualify,playerRecords:Array.from(playerRecords.entries()).map(([id,r])=>({id:id.slice(-4),wins:r.wins,losses:r.losses}))},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
+  // #endregion
+
   // Sort players by record (wins desc, then by seed)
   let sortedPlayers = [...players].sort((a, b) => {
     const recordA = playerRecords.get(a.id)!;
@@ -539,10 +543,14 @@ export function generateSwissNextRound(
 
   // Filter out qualified players in qualification mode
   if (isQualificationMode) {
+    const beforeFilterCount = sortedPlayers.length;
     sortedPlayers = sortedPlayers.filter((player) => {
       const record = playerRecords.get(player.id);
       return !record || record.wins < winsToQualify;
     });
+    // #region agent log
+    fetch('http://127.0.0.1:7254/ingest/87bd214f-3162-4f5e-83f2-30c0aab71339',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/bracket.ts:550',message:'Filtered qualified players',data:{beforeFilterCount,afterFilterCount:sortedPlayers.length,winsToQualify},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'I'})}).catch(()=>{});
+    // #endregion
   }
 
   // Pair players with same record, avoiding rematches
@@ -550,6 +558,10 @@ export function generateSwissNextRound(
   const paired = new Set<string>();
   let matchIdCounter = 0;
   const nextRound = currentRound + 1;
+
+  // #region agent log
+  fetch('http://127.0.0.1:7254/ingest/87bd214f-3162-4f5e-83f2-30c0aab71339',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/bracket.ts:557',message:'Pairing start',data:{playerCount:sortedPlayers.length,nextRound},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+  // #endregion
 
   for (let i = 0; i < sortedPlayers.length; i++) {
     const player1 = sortedPlayers[i];
@@ -588,6 +600,10 @@ export function generateSwissNextRound(
         loserNextMatchId: null,
         loserNextMatchPosition: null,
       });
+    } else {
+      // #region agent log
+      fetch('http://127.0.0.1:7254/ingest/87bd214f-3162-4f5e-83f2-30c0aab71339',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/bracket.ts:592',message:'No opponent found',data:{player1Id:player1.id,nextRound},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
     }
   }
 

@@ -68,11 +68,11 @@ export default function TournamentPage() {
   // Show loading state while tournaments are being loaded to prevent hydration mismatch
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen bg-[var(--bg-dark)]">
         <main className="mx-auto max-w-7xl px-4 py-8">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-4"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+            <div className="h-8 bg-[var(--bg-card)] rounded w-1/4 mb-4"></div>
+            <div className="h-4 bg-[var(--bg-card)] rounded w-1/2"></div>
           </div>
         </main>
       </div>
@@ -81,9 +81,9 @@ export default function TournamentPage() {
 
   if (!tournament) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen bg-[var(--bg-dark)]">
         <main className="mx-auto max-w-7xl px-4 py-8">
-          <p>Tournament not found</p>
+          <p className="text-[var(--text-secondary)]">Tournament not found</p>
         </main>
       </div>
     );
@@ -182,20 +182,27 @@ export default function TournamentPage() {
   const formatLabel = FORMAT_LABELS[tournament.format] || tournament.format;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-[var(--bg-dark)]">
       <main className="mx-auto max-w-7xl px-4 py-8">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold">{tournament.name}</h1>
-            <div className="mt-2 flex items-center gap-3 text-gray-600 dark:text-gray-400">
-              <span>Status: {tournament.status}</span>
-              <span className="text-gray-300 dark:text-gray-600">|</span>
-              <span className="rounded bg-gray-100 px-2 py-0.5 text-sm dark:bg-gray-700">
+            <h1 className="text-3xl md:text-4xl font-bold heading text-white">{tournament.name}</h1>
+            <div className="mt-2 flex items-center gap-3 text-[var(--text-secondary)]">
+              <span className={cn(
+                'px-2 py-0.5 text-xs font-bold rounded uppercase',
+                tournament.status === 'active' && 'bg-[var(--neon-green)]/20 text-[var(--neon-green)]',
+                tournament.status === 'completed' && 'bg-[var(--neon-gold)]/20 text-[var(--neon-gold)]',
+                tournament.status === 'draft' && 'bg-[var(--text-muted)]/20 text-[var(--text-muted)]'
+              )}>
+                Status: {tournament.status}
+              </span>
+              <span className="text-[var(--border-dim)]">|</span>
+              <span className="rounded bg-[var(--bg-card)] px-2 py-0.5 text-sm border border-[var(--border-dim)]">
                 {formatLabel}
               </span>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {(tournament.status === 'active' ||
               tournament.status === 'completed') &&
               tournament.matches.length > 0 && (
@@ -248,8 +255,9 @@ export default function TournamentPage() {
         )}
 
         {tournament.status === 'draft' && (
-          <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-800">
-            <p className="mb-4 text-lg text-gray-600 dark:text-gray-400">
+          <div className="rounded-xl border-2 border-dashed border-[var(--border-dim)] bg-[var(--bg-card)] p-12 text-center">
+            <div className="text-5xl mb-4">🎯</div>
+            <p className="mb-4 text-lg text-[var(--text-secondary)]">
               Tournament is in draft mode. Click "Start Tournament" to begin.
             </p>
           </div>
@@ -313,7 +321,7 @@ export default function TournamentPage() {
           title="Edit Completed Match"
           size="md"
         >
-          <p className="mb-4 text-gray-600 dark:text-gray-400">
+          <p className="mb-4 text-[var(--text-secondary)]">
             Editing this match will reset all downstream matches that depend on
             its result. Are you sure you want to continue?
           </p>
@@ -376,7 +384,7 @@ export default function TournamentPage() {
           title="Delete Tournament"
           size="md"
         >
-          <p className="mb-4 text-gray-600 dark:text-gray-400">
+          <p className="mb-4 text-[var(--text-secondary)]">
             Are you sure you want to delete "{tournament.name}"? This action cannot be undone and will permanently remove all tournament data including matches, players, and results.
           </p>
           <div className="flex gap-3">

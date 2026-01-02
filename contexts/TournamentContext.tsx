@@ -13,7 +13,7 @@ import {
   generateKnockoutFromGroups,
   generateKnockoutFromSwiss,
 } from '@/lib/bracket';
-import { isGroupStageComplete, isRoundComplete } from '@/lib/standings';
+import { isGroupStageComplete, isRoundComplete, countQualifiedPlayers, getPlayerRecord } from '@/lib/standings';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { validateTournaments } from '@/lib/validators';
 import { toast } from 'sonner';
@@ -322,6 +322,10 @@ export function TournamentProvider({
       }
     }
 
+    // #region agent log
+    fetch('http://127.0.0.1:7254/ingest/87bd214f-3162-4f5e-83f2-30c0aab71339',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'contexts/TournamentContext.tsx:326',message:'updateMatch player stats',data:{matchId:matchId.slice(-6),playerWinCounts:tournament.players.map(p=>({id:p.id.slice(-4),name:p.name,wins:p.wins,losses:p.losses}))},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
+    // #endregion
+
     const isComplete = checkTournamentComplete(tournament, updatedMatches);
 
     const updated: Tournament = {
@@ -417,11 +421,18 @@ export function TournamentProvider({
   };
 
   const advanceSwissRound = (tournamentId: string) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7254/ingest/87bd214f-3162-4f5e-83f2-30c0aab71339',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'contexts/TournamentContext.tsx:422',message:'advanceSwissRound entry',data:{tournamentId},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     const tournament = tournaments.find((t) => t.id === tournamentId);
     if (!tournament || tournament.format !== 'swiss') return;
 
     const currentRound = tournament.currentSwissRound || 1;
     const isQualificationMode = tournament.formatConfig?.winsToQualify !== undefined;
+
+    // #region agent log
+    fetch('http://127.0.0.1:7254/ingest/87bd214f-3162-4f5e-83f2-30c0aab71339',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'contexts/TournamentContext.tsx:428',message:'Swiss mode check (post-fix)',data:{currentRound,isQualificationMode,formatConfig:tournament.formatConfig},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
 
     // Check if current round is complete
     if (!isRoundComplete(tournament.matches, currentRound)) {
@@ -431,14 +442,22 @@ export function TournamentProvider({
 
     if (isQualificationMode) {
       // In qualification mode, check if enough players have qualified
-      const qualifiedPlayers = tournament.players.filter(
-        (player) => (player.wins || 0) >= (tournament.formatConfig?.winsToQualify || 3)
-      ).length;
+      // Use match data instead of player.wins for accurate counting
+      const winsToQualify = tournament.formatConfig?.winsToQualify || 3;
+      const qualifiedPlayersCount = countQualifiedPlayers(
+        tournament.matches,
+        tournament.players,
+        winsToQualify
+      );
 
       const targetQualifiers = tournament.formatConfig?.qualifyingPlayers || 8;
 
-      if (qualifiedPlayers >= targetQualifiers) {
-        toast.info(`Qualification target reached (${qualifiedPlayers}/${targetQualifiers}). Use "Advance to Knockout" instead.`);
+      // #region agent log
+      fetch('http://127.0.0.1:7254/ingest/87bd214f-3162-4f5e-83f2-30c0aab71339',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'contexts/TournamentContext.tsx:441',message:'Qualification advance check (fixed)',data:{qualifiedPlayersCount,targetQualifiers,currentRound},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
+
+      if (qualifiedPlayersCount >= targetQualifiers) {
+        toast.info(`Qualification target reached (${qualifiedPlayersCount}/${targetQualifiers}). Use "Advance to Knockout" instead.`);
         return;
       }
 
@@ -497,11 +516,12 @@ export function TournamentProvider({
       return;
     }
 
-    // Check if qualification target is met
+    // Check if qualification target is met using match data for accuracy
     const winsToQualify = tournament.formatConfig?.winsToQualify || 3;
-    const qualifiedPlayers = tournament.players.filter(
-      (player) => (player.wins || 0) >= winsToQualify
-    );
+    const qualifiedPlayers = tournament.players.filter((player) => {
+      const record = getPlayerRecord(tournament.matches, player.id);
+      return record.wins >= winsToQualify;
+    });
 
     const targetQualifiers = tournament.formatConfig?.qualifyingPlayers || 8;
     if (qualifiedPlayers.length < targetQualifiers) {
@@ -511,9 +531,9 @@ export function TournamentProvider({
 
     // Sort qualified players by wins (desc), then by seed (asc)
     const sortedQualifiedPlayers = qualifiedPlayers.sort((a, b) => {
-      const winsA = a.wins || 0;
-      const winsB = b.wins || 0;
-      if (winsB !== winsA) return winsB - winsA;
+      const recordA = getPlayerRecord(tournament.matches, a.id);
+      const recordB = getPlayerRecord(tournament.matches, b.id);
+      if (recordB.wins !== recordA.wins) return recordB.wins - recordA.wins;
       return a.seed - b.seed;
     });
 

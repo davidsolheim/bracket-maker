@@ -131,6 +131,20 @@ export function isGroupStageComplete(matches: Match[]): boolean {
 }
 
 /**
+ * Count players who have reached a certain number of wins (for Swiss qualification mode)
+ */
+export function countQualifiedPlayers(
+  matches: Match[],
+  players: Player[],
+  winsToQualify: number
+): number {
+  return players.filter((player) => {
+    const record = getPlayerRecord(matches, player.id);
+    return record.wins >= winsToQualify;
+  }).length;
+}
+
+/**
  * Get win-loss record for a player
  */
 export function getPlayerRecord(

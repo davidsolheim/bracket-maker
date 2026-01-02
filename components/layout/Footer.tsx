@@ -8,7 +8,10 @@ export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-gray-100 bg-white/80 backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/80 mt-auto">
+    <footer className="border-t border-[var(--border-dim)] bg-[var(--bg-card)]/50 backdrop-blur-md mt-auto relative overflow-hidden">
+      {/* Gradient accent line */}
+      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[var(--neon-cyan)]/30 to-transparent" />
+      
       <div className="mx-auto max-w-7xl px-6 py-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
           
@@ -18,19 +21,21 @@ export function Footer() {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center md:items-start gap-1"
           >
-            <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
               Special Shoutout
             </span>
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              🎉 Happy Birthday, <span className="text-green-600 dark:text-green-400">Michael Hofeling</span>!
+            <p className="text-sm font-medium text-[var(--text-secondary)]">
+              🎉 Happy Birthday, <span className="text-[var(--neon-green)]">Michael Hofeling</span>!
             </p>
           </motion.div>
 
           {/* Center: Branding & Links */}
           <div className="flex flex-col items-center gap-3">
-            <Link href="/" className="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-white transition-opacity hover:opacity-80">
-              <img src="/bracket-magic-icon.png" alt="" className="h-6 w-6" />
-              <span>Bracket Magic</span>
+            <Link href="/" className="flex items-center gap-3 text-xl font-bold text-white transition-opacity hover:opacity-80 heading">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--neon-cyan)] to-[var(--neon-magenta)] flex items-center justify-center text-sm">
+                ⚔️
+              </div>
+              <span className="gradient-text">Bracket Magic</span>
             </Link>
             <div className="flex items-center gap-4">
               <Link
@@ -38,17 +43,17 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className={cn(
-                  'text-sm text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400',
+                  'text-sm text-[var(--text-muted)] hover:text-[var(--neon-cyan)]',
                   'transition-colors duration-200'
                 )}
               >
                 Website
               </Link>
-              <span className="text-gray-300 dark:text-gray-700">•</span>
+              <span className="text-[var(--text-muted)]">•</span>
               <Link
                 href="/tournament/new"
                 className={cn(
-                  'text-sm text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400',
+                  'text-sm text-[var(--text-muted)] hover:text-[var(--neon-cyan)]',
                   'transition-colors duration-200'
                 )}
               >
@@ -59,16 +64,16 @@ export function Footer() {
 
           {/* Right: Copyright & Attribution */}
           <div className="flex flex-col items-center md:items-end gap-1">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Created with <span className="text-red-500 animate-pulse">❤️</span> by{' '}
+            <p className="text-sm text-[var(--text-secondary)]">
+              Created with <span className="text-[var(--neon-magenta)] animate-pulse">❤️</span> by{' '}
               <Link 
                 href="https://davidsolheim.com" 
-                className="font-medium text-gray-900 dark:text-white hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                className="font-medium text-white hover:text-[var(--neon-cyan)] transition-colors"
               >
                 David Solheim
               </Link>
             </p>
-            <p className="text-xs text-gray-400 dark:text-gray-500">
+            <p className="text-xs text-[var(--text-muted)]">
               © {currentYear} All rights reserved.
             </p>
           </div>

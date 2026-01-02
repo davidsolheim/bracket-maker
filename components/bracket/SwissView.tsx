@@ -5,7 +5,7 @@ import type { Match, Player, TournamentFormatConfig } from '@/types/tournament';
 import { StandingsTable } from './StandingsTable';
 import { MatchCard } from '../match/MatchCard';
 import { Button } from '../ui/Button';
-import { isRoundComplete } from '@/lib/standings';
+import { isRoundComplete, getPlayerRecord } from '@/lib/standings';
 import { cn } from '@/lib/utils';
 
 interface SwissViewProps {
@@ -52,21 +52,32 @@ export function SwissView({
   const currentRoundMatches = matches.filter((m) => m.round === currentRound);
   const currentRoundComplete = isRoundComplete(matches, currentRound);
 
-  // Calculate qualified players for qualification mode
-  const qualifiedPlayers = useMemo(() => {
+  // #region agent log
+  fetch('http://127.0.0.1:7254/ingest/87bd214f-3162-4f5e-83f2-30c0aab71339',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/bracket/SwissView.tsx:55',message:'SwissView render',data:{isQualificationMode,winsToQualify,qualifyingPlayers,currentRound,totalRounds},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
+
+  // Calculate qualified players for qualification mode (using match data for accuracy)
+  const qualifiedPlayersCount = useMemo(() => {
     if (!isQualificationMode) return 0;
 
-    return players.filter((player) => (player.wins || 0) >= winsToQualify).length;
-  }, [players, isQualificationMode, winsToQualify]);
+    return players.filter((player) => {
+      const record = getPlayerRecord(matches, player.id);
+      return record.wins >= winsToQualify;
+    }).length;
+  }, [players, matches, isQualificationMode, winsToQualify]);
 
   const canAdvance = isQualificationMode
-    ? currentRoundComplete && qualifiedPlayers < qualifyingPlayers
+    ? currentRoundComplete && qualifiedPlayersCount < qualifyingPlayers
     : currentRoundComplete && currentRound < totalRounds;
 
-  const qualificationComplete = isQualificationMode && qualifiedPlayers >= qualifyingPlayers;
+  const qualificationComplete = isQualificationMode && qualifiedPlayersCount >= qualifyingPlayers;
   const isComplete = isQualificationMode
     ? qualificationComplete
     : currentRound >= totalRounds && currentRoundComplete;
+
+  // #region agent log
+  fetch('http://127.0.0.1:7254/ingest/87bd214f-3162-4f5e-83f2-30c0aab71339',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/bracket/SwissView.tsx:75',message:'SwissView states (fixed)',data:{canAdvance,qualificationComplete,isComplete,qualifiedPlayersCount,qualifyingPlayers,winsToQualify},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+  // #endregion
 
   return (
     <div className="space-y-8">
@@ -80,10 +91,10 @@ export function SwissView({
                   Qualification Round {currentRound}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {qualifiedPlayers >= qualifyingPlayers
-                    ? `Qualification complete! ${qualifiedPlayers} of ${qualifyingPlayers} players qualified.`
+                  {qualifiedPlayersCount >= qualifyingPlayers
+                    ? `Qualification complete! ${qualifiedPlayersCount} of ${qualifyingPlayers} players qualified.`
                     : currentRoundComplete
-                    ? `Round complete - ${qualifiedPlayers} of ${qualifyingPlayers} players qualified`
+                    ? `Round complete - ${qualifiedPlayersCount} of ${qualifyingPlayers} players qualified`
                     : `${currentRoundMatches.filter((m) => m.winnerId).length} / ${currentRoundMatches.length} matches completed`}
                 </p>
               </>

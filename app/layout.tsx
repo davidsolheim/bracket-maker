@@ -8,6 +8,7 @@ import { Toaster } from "sonner";
 import { ErrorBoundaryWrapper } from "@/components/ErrorBoundaryWrapper";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { getWebApplicationSchema, getOrganizationSchema } from "@/lib/structured-data";
+import { Analytics } from "@vercel/analytics/react";
 
 const rajdhani = Rajdhani({
   variable: "--font-heading",
@@ -101,6 +102,7 @@ export default function RootLayout({
           </TournamentProvider>
           <Toaster theme="system" richColors />
         </ErrorBoundaryWrapper>
+        <Analytics />
       </body>
     </html>
   );

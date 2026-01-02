@@ -101,8 +101,7 @@ export function layoutSingleElimination(
       });
       
       // Create edge to next match
-      if (match.nextMatchId) {
-        const isComplete = match.winnerId !== null;
+      if (match.nextMatchId && match.winnerId) {
         edges.push({
           id: `${match.id}->${match.nextMatchId}`,
           source: match.id,
@@ -111,8 +110,8 @@ export function layoutSingleElimination(
           targetHandle: 'left',
           type: 'bracketEdge',
           data: {
-            isWinnerPath: isComplete,
-            isAnimated: !isComplete,
+            isWinnerPath: true,
+            isAnimated: false,
           },
         });
       }
@@ -201,7 +200,7 @@ export function layoutDoubleElimination(
       });
       
       // Winner edge
-      if (match.nextMatchId) {
+      if (match.nextMatchId && match.winnerId) {
         edges.push({
           id: `${match.id}->${match.nextMatchId}`,
           source: match.id,
@@ -209,12 +208,12 @@ export function layoutDoubleElimination(
           sourceHandle: 'right',
           targetHandle: 'left',
           type: 'bracketEdge',
-          data: { isWinnerPath: match.winnerId !== null, isAnimated: !match.winnerId },
+          data: { isWinnerPath: true, isAnimated: false },
         });
       }
       
       // Loser edge (to losers bracket)
-      if (match.loserNextMatchId) {
+      if (match.loserNextMatchId && match.winnerId) {
         edges.push({
           id: `${match.id}->${match.loserNextMatchId}-loser`,
           source: match.id,
@@ -222,7 +221,7 @@ export function layoutDoubleElimination(
           sourceHandle: 'bottom',
           targetHandle: 'top',
           type: 'bracketEdge',
-          data: { isLoserPath: true, isAnimated: true },
+          data: { isLoserPath: true, isAnimated: false },
         });
       }
     });
@@ -247,7 +246,7 @@ export function layoutDoubleElimination(
         data: { match, players, ...callbacks },
       });
       
-      if (match.nextMatchId) {
+      if (match.nextMatchId && match.winnerId) {
         edges.push({
           id: `${match.id}->${match.nextMatchId}`,
           source: match.id,
@@ -255,7 +254,7 @@ export function layoutDoubleElimination(
           sourceHandle: 'right',
           targetHandle: 'left',
           type: 'bracketEdge',
-          data: { isWinnerPath: match.winnerId !== null, isAnimated: !match.winnerId },
+          data: { isWinnerPath: true, isAnimated: false },
         });
       }
     });
@@ -274,7 +273,7 @@ export function layoutDoubleElimination(
       data: { match, players, ...callbacks },
     });
     
-    if (match.nextMatchId) {
+    if (match.nextMatchId && match.winnerId) {
       edges.push({
         id: `${match.id}->${match.nextMatchId}`,
         source: match.id,
@@ -282,7 +281,7 @@ export function layoutDoubleElimination(
         sourceHandle: 'right',
         targetHandle: 'left',
         type: 'bracketEdge',
-        data: { isWinnerPath: match.winnerId !== null },
+        data: { isWinnerPath: true, isAnimated: false },
       });
     }
   });

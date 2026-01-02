@@ -2,17 +2,16 @@
 
 import { useState, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useTournament } from '@/contexts/TournamentContext';
-import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 import { downloadBackup, parseBackupFile, readFileAsText, type BackupData } from '@/lib/backup';
 import { BackupRestoreModal } from '@/components/backup/BackupRestoreModal';
 
 export function Header() {
   const { currentTournament } = useTournament();
-  const { resolvedTheme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [backupModalOpen, setBackupModalOpen] = useState(false);
   const [backupData, setBackupData] = useState<BackupData | null>(null);
@@ -70,20 +69,20 @@ export function Header() {
       
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 group">
+        <Link href="/" className="flex items-center group">
           <motion.div
-            whileHover={{ scale: 1.05, rotate: 5 }}
+            whileHover={{ scale: 1.02 }}
             className="relative"
           >
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[var(--neon-cyan)] to-[var(--neon-magenta)] flex items-center justify-center text-xl font-bold text-white shadow-lg">
-              ⚔️
-            </div>
-            <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-[var(--neon-cyan)] to-[var(--neon-magenta)] blur-lg opacity-50 group-hover:opacity-75 transition-opacity" />
+            <Image
+              src="/bracket-magic-banner-white.png"
+              alt="Bracket Magic"
+              width={400}
+              height={210}
+              className="h-20 w-auto object-contain"
+              priority
+            />
           </motion.div>
-          <div>
-            <h1 className="text-xl font-bold heading gradient-text">Bracket Magic</h1>
-            <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">Tournament Manager</p>
-          </div>
         </Link>
         
         {/* Desktop Navigation */}
@@ -146,31 +145,6 @@ export function Header() {
             </svg>
           </motion.button>
           
-          {/* Theme toggle */}
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={toggleTheme}
-            className={cn(
-              'cursor-pointer rounded-lg p-2.5 transition-all duration-200',
-              'text-[var(--text-muted)] hover:text-[var(--neon-gold)]',
-              'hover:bg-white/5 border border-transparent hover:border-[var(--border-dim)]'
-            )}
-            aria-label="Toggle theme"
-          >
-            {resolvedTheme === 'dark' ? (
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            ) : (
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-              </svg>
-            )}
-          </motion.button>
-          
           {/* Current tournament badge */}
           {currentTournament && (
             <div className="ml-2 pl-4 border-l border-[var(--border-dim)]">
@@ -217,29 +191,6 @@ export function Header() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={toggleTheme}
-            className={cn(
-              'cursor-pointer rounded-lg p-2 transition-colors',
-              'text-[var(--text-muted)] hover:text-[var(--neon-gold)]',
-              'hover:bg-white/5'
-            )}
-            aria-label="Toggle theme"
-          >
-            {resolvedTheme === 'dark' ? (
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            ) : (
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-              </svg>
-            )}
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.05 }}

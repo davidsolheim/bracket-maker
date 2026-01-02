@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     description: "Create and manage professional tournament brackets. Supports double elimination, round robin, Swiss system, and group stages.",
     images: [
       {
-        url: "/bracket-magic-banner.png",
+        url: "/bracket-magic-banner-white.png",
         width: 1200,
         height: 630,
         alt: "Bracket Magic Tournament Manager",
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Bracket Magic - Tournament Bracket Manager",
     description: "Create and manage professional tournament brackets with ease.",
-    images: ["/bracket-magic-banner.png"],
+    images: ["/bracket-magic-banner-white.png"],
     creator: "@davidsolheim",
   },
   robots: {

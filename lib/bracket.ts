@@ -254,7 +254,12 @@ function generateLosersBracket(
     );
 
     currentRoundMatches.forEach((match, index) => {
-      const nextMatchIndex = Math.floor(index / 2);
+      // In losers bracket:
+      // Odd rounds (1, 3, 5...) feed into same number of matches in next round (1-to-1)
+      // Even rounds (2, 4, 6...) feed into half as many matches in next round (2-to-1)
+      const isOneToOne = round % 2 === 1;
+      const nextMatchIndex = isOneToOne ? index : Math.floor(index / 2);
+      
       if (nextMatchIndex < nextRoundMatches.length) {
         match.nextMatchId = nextRoundMatches[nextMatchIndex].id;
         match.nextMatchPosition = nextRoundMatches[nextMatchIndex].position;
@@ -824,10 +829,18 @@ export function updateMatchResult(
         } else if (match.bracket === 'losers') {
           nextMatch.player2Id = match.winnerId;
         }
-      } else {
-        if (!nextMatch.player1Id) {
+      } else if (nextMatch.bracket === 'losers' && nextMatch.round % 2 === 0) {
+        // Even rounds in losers bracket: p1 is from losers bracket, p2 is from winners bracket
+        if (match.bracket === 'losers') {
           nextMatch.player1Id = match.winnerId;
-        } else if (!nextMatch.player2Id) {
+        } else if (match.bracket === 'winners') {
+          nextMatch.player2Id = match.winnerId;
+        }
+      } else {
+        const isPlayer1Slot = match.position % 2 === 1;
+        if (isPlayer1Slot) {
+          nextMatch.player1Id = match.winnerId;
+        } else {
           nextMatch.player2Id = match.winnerId;
         }
       }
@@ -840,9 +853,16 @@ export function updateMatchResult(
     if (loserId) {
       const loserMatch = getMatchById(updatedMatches, match.loserNextMatchId);
       if (loserMatch) {
-        if (!loserMatch.player1Id) {
-          loserMatch.player1Id = loserId;
-        } else if (!loserMatch.player2Id) {
+        if (loserMatch.round === 1) {
+          // Round 1 of losers bracket is fed by Round 1 of winners bracket (2-to-1)
+          const isPlayer1Slot = match.position % 2 === 1;
+          if (isPlayer1Slot) {
+            loserMatch.player1Id = loserId;
+          } else {
+            loserMatch.player2Id = loserId;
+          }
+        } else {
+          // Subsequent rounds of winners bracket feed into even rounds of losers bracket (always player 2)
           loserMatch.player2Id = loserId;
         }
       }
@@ -886,53 +906,77 @@ export function resetDownstreamMatches(matches: Match[], matchId: string): Match
 
   const matchesToReset = new Set<string>();
 
-  const findDependentMatches = (sourceMatchId: string) => {
-    updatedMatches.forEach((m) => {
-      if (
-        (m.nextMatchId === sourceMatchId || m.loserNextMatchId === sourceMatchId) &&
-        !matchesToReset.has(m.id)
-      ) {
-        matchesToReset.add(m.id);
-        findDependentMatches(m.id);
-      }
-    });
+  const findDependentMatches = (currentMatchId: string) => {
+    const m = getMatchById(updatedMatches, currentMatchId);
+    if (!m) return;
+
+    if (m.nextMatchId && !matchesToReset.has(m.nextMatchId)) {
+      matchesToReset.add(m.nextMatchId);
+      findDependentMatches(m.nextMatchId);
+    }
+    if (m.loserNextMatchId && !matchesToReset.has(m.loserNextMatchId)) {
+      matchesToReset.add(m.loserNextMatchId);
+      findDependentMatches(m.loserNextMatchId);
+    }
   };
 
-  if (match.nextMatchId) {
-    matchesToReset.add(match.nextMatchId);
-    findDependentMatches(match.nextMatchId);
-  }
-
-  if (match.loserNextMatchId) {
-    matchesToReset.add(match.loserNextMatchId);
-    findDependentMatches(match.loserNextMatchId);
-  }
+  findDependentMatches(matchId);
 
   matchesToReset.forEach((id) => {
     const m = getMatchById(updatedMatches, id);
     if (m) {
-      const sourceMatch = getMatchById(updatedMatches, matchId);
-      if (sourceMatch?.winnerId) {
-        if (m.player1Id === sourceMatch.winnerId) {
-          m.player1Id = null;
-        }
-        if (m.player2Id === sourceMatch.winnerId) {
-          m.player2Id = null;
-        }
-        if (match.bracket === 'winners' && match.loserNextMatchId === m.id) {
-          const loserId =
-            sourceMatch.winnerId === sourceMatch.player1Id
-              ? sourceMatch.player2Id
-              : sourceMatch.player1Id;
-          if (loserId) {
-            if (m.player1Id === loserId) m.player1Id = null;
-            if (m.player2Id === loserId) m.player2Id = null;
+      // Find which matches feed into this one to see what to clear
+      const sources = updatedMatches.filter(
+        (src) => src.nextMatchId === m.id || src.loserNextMatchId === m.id
+      );
+      
+      sources.forEach(src => {
+        if (!src.winnerId) {
+          // If a source has no winner, clear any player IDs it might have contributed
+          // This handles the case where we just reset a source
+          if (m.player1Id && (m.player1Id === src.player1Id || m.player1Id === src.player2Id)) {
+             // We can't be sure which player it was without more info, 
+             // but if the source is reset, we should probably clear the slot it feeds
           }
         }
-      }
+      });
+
+      // Clear the match state
       m.player1Score = null;
       m.player2Score = null;
       m.winnerId = null;
+      
+      // Clear player IDs that come from winners of other matches
+      // For simplicity, if it's a bracket match, clear player IDs if they come from a source that's also being reset
+      const sourceMatchIds = updatedMatches
+        .filter(src => src.nextMatchId === m.id || src.loserNextMatchId === m.id)
+        .map(src => src.id);
+      
+      // If the source match is in our reset set, or is the original match being reset, clear the corresponding player slot
+      sourceMatchIds.forEach(srcId => {
+        if (srcId === matchId || matchesToReset.has(srcId)) {
+          const src = getMatchById(updatedMatches, srcId)!;
+          const isWinnerPath = src.nextMatchId === m.id;
+          const isLoserPath = src.loserNextMatchId === m.id;
+          
+          // Determine which slot this source feeds
+          let slotToClear: 'player1' | 'player2' | null = null;
+          
+          if (m.bracket === 'grand-finals' && m.round === 1) {
+            if (src.bracket === 'winners') slotToClear = 'player1';
+            else if (src.bracket === 'losers') slotToClear = 'player2';
+          } else if (m.bracket === 'losers' && m.round % 2 === 0) {
+            if (isWinnerPath) slotToClear = 'player1';
+            else if (isLoserPath) slotToClear = 'player2';
+          } else {
+            if (src.position % 2 === 1) slotToClear = 'player1';
+            else slotToClear = 'player2';
+          }
+          
+          if (slotToClear === 'player1') m.player1Id = null;
+          if (slotToClear === 'player2') m.player2Id = null;
+        }
+      });
     }
   });
 
@@ -973,9 +1017,10 @@ export function forceMatchWinner(
           nextMatch.player2Id = match.winnerId;
         }
       } else {
-        if (!nextMatch.player1Id) {
+        const isPlayer1Slot = match.position % 2 === 1;
+        if (isPlayer1Slot) {
           nextMatch.player1Id = match.winnerId;
-        } else if (!nextMatch.player2Id) {
+        } else {
           nextMatch.player2Id = match.winnerId;
         }
       }

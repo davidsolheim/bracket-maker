@@ -94,15 +94,17 @@ function BracketEdgeComponent({
       {/* Arrow marker for winner paths */}
       {isWinnerPath && (
         <motion.circle
-          initial={{ offsetDistance: '0%' }}
-          animate={{ offsetDistance: '100%' }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
           r={4}
           fill={edgeColor}
           style={{
             offsetPath: `path("${edgePath}")`,
+            offsetDistance: '0%',
             filter: `drop-shadow(0 0 3px ${edgeColor})`,
           }}
+          animate={{
+            offsetDistance: '100%',
+          }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
         />
       )}
     </>

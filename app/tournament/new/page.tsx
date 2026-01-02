@@ -48,6 +48,7 @@ export default function NewTournamentPage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [format, setFormat] = useState<TournamentFormat>('double-elimination');
   const [formatConfig, setFormatConfig] = useState<TournamentFormatConfig>({});
+  const [swissMode, setSwissMode] = useState<'fixed' | 'qualification'>('fixed');
   const [savedPlayerLists, setSavedPlayerLists] = useState<SavedPlayerList[]>([]);
   const [showSaveListModal, setShowSaveListModal] = useState(false);
   const [listNameToSave, setListNameToSave] = useState('');
@@ -104,6 +105,15 @@ export default function NewTournamentPage() {
       return;
     }
 
+    // Validate Swiss qualification mode
+    if (format === 'swiss' && swissMode === 'qualification') {
+      const qualifyingPlayers = formatConfig.qualifyingPlayers || 8;
+      if (qualifyingPlayers > players.length) {
+        toast.error(`Cannot have ${qualifyingPlayers} qualifiers with only ${players.length} players`);
+        return;
+      }
+    }
+
     const config = buildFormatConfig();
     const tournament = createTournament(name.trim(), players, format, config);
     router.push(`/tournament/${tournament.id}`);
@@ -120,6 +130,15 @@ export default function NewTournamentPage() {
       return;
     }
 
+    // Validate Swiss qualification mode
+    if (format === 'swiss' && swissMode === 'qualification') {
+      const qualifyingPlayers = formatConfig.qualifyingPlayers || 8;
+      if (qualifyingPlayers > players.length) {
+        toast.error(`Cannot have ${qualifyingPlayers} qualifiers with only ${players.length} players`);
+        return;
+      }
+    }
+
     const config = buildFormatConfig();
     const tournament = createTournament(name.trim(), players, format, config);
     startTournament(tournament.id);
@@ -129,9 +148,16 @@ export default function NewTournamentPage() {
   const buildFormatConfig = (): TournamentFormatConfig | undefined => {
     switch (format) {
       case 'swiss':
-        return {
-          numberOfRounds: formatConfig.numberOfRounds || defaultSwissRounds,
-        };
+        if (swissMode === 'qualification') {
+          return {
+            winsToQualify: formatConfig.winsToQualify || 3,
+            qualifyingPlayers: formatConfig.qualifyingPlayers || 8,
+          };
+        } else {
+          return {
+            numberOfRounds: formatConfig.numberOfRounds || defaultSwissRounds,
+          };
+        }
       case 'group-knockout':
         return {
           groupCount: formatConfig.groupCount || defaultGroupCount,
@@ -146,6 +172,23 @@ export default function NewTournamentPage() {
   useEffect(() => {
     setSavedPlayerLists(loadPlayerLists());
   }, []);
+
+  // Clear format config when switching Swiss modes
+  useEffect(() => {
+    if (format === 'swiss') {
+      setFormatConfig(prev => {
+        if (swissMode === 'qualification') {
+          // Clear fixed rounds config
+          const { numberOfRounds, ...rest } = prev;
+          return rest;
+        } else {
+          // Clear qualification config
+          const { winsToQualify, qualifyingPlayers, ...rest } = prev;
+          return rest;
+        }
+      });
+    }
+  }, [format, swissMode]);
 
   const handleLoadPlayerList = (listId: string) => {
     const list = savedPlayerLists.find((l) => l.id === listId);
@@ -237,28 +280,133 @@ export default function NewTournamentPage() {
           {/* Format-specific options */}
           {format === 'swiss' && (
             <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700/50">
-              <label className="mb-2 block text-sm font-medium">
-                Number of Rounds
-              </label>
-              <input
-                type="number"
-                min={2}
-                max={10}
-                value={formatConfig.numberOfRounds || defaultSwissRounds}
-                onChange={(e) =>
-                  setFormatConfig({
-                    ...formatConfig,
-                    numberOfRounds: parseInt(e.target.value) || defaultSwissRounds,
-                  })
-                }
-                className={cn(
-                  'w-32 rounded border border-gray-300 px-3 py-2',
-                  'dark:border-gray-600 dark:bg-gray-700'
-                )}
-              />
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Recommended: {defaultSwissRounds} rounds for {players.length || '?'} players
-              </p>
+              <h3 className="mb-4 font-medium">Swiss Tournament Mode</h3>
+
+              {/* Mode selector */}
+              <div className="mb-4">
+                <label className="mb-2 block text-sm font-medium">
+                  Tournament Style
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setSwissMode('fixed')}
+                    className={cn(
+                      'rounded-lg border-2 px-4 py-2 text-sm font-medium transition-all',
+                      swissMode === 'fixed'
+                        ? 'border-green-500 bg-green-50 text-green-700 dark:border-green-400 dark:bg-green-900/20 dark:text-green-300'
+                        : 'border-gray-200 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-500'
+                    )}
+                  >
+                    Fixed Rounds
+                  </button>
+                  <button
+                    onClick={() => setSwissMode('qualification')}
+                    className={cn(
+                      'rounded-lg border-2 px-4 py-2 text-sm font-medium transition-all',
+                      swissMode === 'qualification'
+                        ? 'border-green-500 bg-green-50 text-green-700 dark:border-green-400 dark:bg-green-900/20 dark:text-green-300'
+                        : 'border-gray-200 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-500'
+                    )}
+                  >
+                    Qualification Mode
+                  </button>
+                </div>
+              </div>
+
+              {swissMode === 'fixed' && (
+                <div>
+                  <label className="mb-2 block text-sm font-medium">
+                    Number of Rounds
+                  </label>
+                  <input
+                    type="number"
+                    min={2}
+                    max={10}
+                    value={formatConfig.numberOfRounds || defaultSwissRounds}
+                    onChange={(e) =>
+                      setFormatConfig({
+                        ...formatConfig,
+                        numberOfRounds: parseInt(e.target.value) || defaultSwissRounds,
+                      })
+                    }
+                    className={cn(
+                      'w-32 rounded border border-gray-300 px-3 py-2',
+                      'dark:border-gray-600 dark:bg-gray-700'
+                    )}
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Recommended: {defaultSwissRounds} rounds for {players.length || '?'} players
+                  </p>
+                </div>
+              )}
+
+              {swissMode === 'qualification' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium">
+                      Wins to Qualify
+                    </label>
+                    <input
+                      type="number"
+                      min={2}
+                      max={10}
+                      value={formatConfig.winsToQualify || 3}
+                      onChange={(e) =>
+                        setFormatConfig({
+                          ...formatConfig,
+                          winsToQualify: parseInt(e.target.value) || 3,
+                        })
+                      }
+                      className={cn(
+                        'w-32 rounded border border-gray-300 px-3 py-2',
+                        'dark:border-gray-600 dark:bg-gray-700'
+                      )}
+                    />
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Players need this many wins to qualify for knockout
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium">
+                      Number of Qualifiers
+                    </label>
+                    <select
+                      value={formatConfig.qualifyingPlayers || 8}
+                      onChange={(e) =>
+                        setFormatConfig({
+                          ...formatConfig,
+                          qualifyingPlayers: parseInt(e.target.value),
+                        })
+                      }
+                      className={cn(
+                        'w-32 rounded border border-gray-300 px-3 py-2',
+                        'dark:border-gray-600 dark:bg-gray-700'
+                      )}
+                    >
+                      <option value={4}>4</option>
+                      <option value={8}>8</option>
+                      <option value={12}>12</option>
+                      <option value={16}>16</option>
+                    </select>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Must be divisible by 4 for knockout bracket
+                      {players.length > 0 && formatConfig.qualifyingPlayers && formatConfig.qualifyingPlayers > players.length && (
+                        <span className="text-red-600 dark:text-red-400">
+                          {' '}• Too many qualifiers for {players.length} players
+                        </span>
+                      )}
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg bg-blue-50 p-3 dark:bg-blue-900/20">
+                    <p className="text-sm text-blue-800 dark:text-blue-200">
+                      <strong>Qualification Mode:</strong> Rounds continue until {formatConfig.qualifyingPlayers || 8} players
+                      have won {formatConfig.winsToQualify || 3} matches, then qualified players advance to single elimination.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

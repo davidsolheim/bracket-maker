@@ -16,6 +16,7 @@ interface BracketTreeProps {
   formatConfig?: TournamentFormatConfig;
   currentSwissRound?: number;
   groupStageComplete?: boolean;
+  swissQualificationComplete?: boolean;
   onMatchClick: (match: Match) => void;
   onOverrideClick?: (match: Match) => void;
   onAdvanceSwissRound?: () => void;
@@ -32,6 +33,7 @@ export const BracketTree = forwardRef<HTMLDivElement, BracketTreeProps>(
       formatConfig,
       currentSwissRound = 1,
       groupStageComplete = false,
+      swissQualificationComplete = false,
       onMatchClick,
       onOverrideClick,
       onAdvanceSwissRound,
@@ -80,6 +82,22 @@ export const BracketTree = forwardRef<HTMLDivElement, BracketTreeProps>(
         );
 
       case 'swiss':
+        // If qualification is complete, show knockout bracket
+        if (swissQualificationComplete) {
+          return (
+            <div ref={ref} className="pb-8">
+              <WinnersBracket
+                matches={winnersMatches}
+                players={players}
+                onMatchClick={onMatchClick}
+                onOverrideClick={onOverrideClick}
+                activeMatchId={activeMatchId}
+              />
+            </div>
+          );
+        }
+
+        // Otherwise show Swiss qualification view
         return (
           <div ref={ref} className="pb-8">
             <SwissView
@@ -90,6 +108,10 @@ export const BracketTree = forwardRef<HTMLDivElement, BracketTreeProps>(
               onMatchClick={onMatchClick}
               onAdvanceRound={onAdvanceSwissRound}
               activeMatchId={activeMatchId}
+              isQualificationMode={formatConfig?.winsToQualify !== undefined}
+              winsToQualify={formatConfig?.winsToQualify || 3}
+              qualifyingPlayers={formatConfig?.qualifyingPlayers || 8}
+              onAdvanceToKnockout={onAdvanceToKnockout}
             />
           </div>
         );

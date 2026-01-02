@@ -11,6 +11,9 @@ interface StandingsTableProps {
   groupId?: string;
   title?: string;
   compact?: boolean;
+  // Swiss qualification mode
+  highlightQualified?: boolean;
+  winsToQualify?: number;
 }
 
 export function StandingsTable({
@@ -19,6 +22,8 @@ export function StandingsTable({
   groupId,
   title,
   compact = false,
+  highlightQualified = false,
+  winsToQualify = 3,
 }: StandingsTableProps) {
   const standings = useMemo(
     () => calculateStandings(matches, players, groupId),
@@ -61,14 +66,20 @@ export function StandingsTable({
             </tr>
           </thead>
           <tbody>
-            {standings.map((standing, index) => (
-              <tr
-                key={standing.playerId}
-                className={cn(
-                  'border-b border-gray-100 dark:border-gray-700/50',
-                  index < 2 && 'bg-green-50/50 dark:bg-green-900/10'
-                )}
-              >
+            {standings.map((standing, index) => {
+              const isQualified = highlightQualified && standing.wins >= winsToQualify;
+              const player = players.find(p => p.id === standing.playerId);
+              const actualWins = player?.wins || 0;
+
+              return (
+                <tr
+                  key={standing.playerId}
+                  className={cn(
+                    'border-b border-gray-100 dark:border-gray-700/50',
+                    index < 2 && !isQualified && 'bg-green-50/50 dark:bg-green-900/10',
+                    isQualified && 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                  )}
+                >
                 <td className={cn('px-4 py-2 font-medium text-gray-500', compact && 'px-2 py-1')}>
                   {index + 1}
                 </td>
@@ -103,8 +114,9 @@ export function StandingsTable({
                   {standing.pointDifferential > 0 && '+'}
                   {standing.pointDifferential}
                 </td>
-              </tr>
-            ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

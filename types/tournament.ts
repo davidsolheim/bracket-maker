@@ -10,8 +10,11 @@ export type TournamentFormat =
   | 'group-knockout';
 
 export interface TournamentFormatConfig {
-  // Swiss system
+  // Swiss system - legacy fixed rounds mode
   numberOfRounds?: number;
+  // Swiss system - win-based qualification mode
+  winsToQualify?: number;
+  qualifyingPlayers?: number;
   // Group Stage
   groupCount?: number;
   playersPerGroup?: number;
@@ -75,6 +78,8 @@ export interface Tournament {
   completedAt: Date | null;
   // For group-knockout: track when group stage is complete
   groupStageComplete?: boolean;
+  // For Swiss: track when qualification phase is complete
+  swissQualificationComplete?: boolean;
   // Current round for Swiss tournaments
   currentSwissRound?: number;
 }

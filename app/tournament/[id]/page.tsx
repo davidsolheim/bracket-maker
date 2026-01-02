@@ -41,6 +41,7 @@ export default function TournamentPage() {
     overrideMatchPlayers,
     forceMatchWinner,
     advanceSwissRound,
+    advanceSwissToKnockout,
     advanceToKnockout,
     deleteTournament,
   } = useTournament();
@@ -156,6 +157,10 @@ export default function TournamentPage() {
     advanceToKnockout(tournament.id);
   };
 
+  const handleAdvanceSwissToKnockout = () => {
+    advanceSwissToKnockout(tournament.id);
+  };
+
   const handleDeleteTournament = () => {
     deleteTournament(tournament.id);
     router.push('/');
@@ -261,10 +266,11 @@ export default function TournamentPage() {
                 formatConfig={tournament.formatConfig}
                 currentSwissRound={tournament.currentSwissRound}
                 groupStageComplete={tournament.groupStageComplete}
+                swissQualificationComplete={tournament.swissQualificationComplete}
                 onMatchClick={handleMatchClick}
                 onOverrideClick={handleOverrideClick}
                 onAdvanceSwissRound={handleAdvanceSwissRound}
-                onAdvanceToKnockout={handleAdvanceToKnockout}
+                onAdvanceToKnockout={tournament.format === 'swiss' ? handleAdvanceSwissToKnockout : handleAdvanceToKnockout}
                 activeMatchId={selectedMatch?.id}
               />
             ) : (
@@ -290,6 +296,7 @@ export default function TournamentPage() {
               formatConfig={tournament.formatConfig}
               currentSwissRound={tournament.currentSwissRound}
               groupStageComplete={tournament.groupStageComplete}
+              swissQualificationComplete={tournament.swissQualificationComplete}
               onMatchClick={handleMatchClick}
               onOverrideClick={handleOverrideClick}
               activeMatchId={selectedMatch?.id}

@@ -490,7 +490,8 @@ export function generateSwissFirstRound(
 export function generateSwissNextRound(
   players: Player[],
   existingMatches: Match[],
-  currentRound: number
+  currentRound: number,
+  config?: TournamentFormatConfig
 ): Match[] {
   // Get player records
   const playerRecords = new Map<string, { wins: number; losses: number; opponents: Set<string> }>();
@@ -524,13 +525,25 @@ export function generateSwissNextRound(
     }
   });
 
+  // In qualification mode, exclude players who have already qualified
+  const isQualificationMode = config?.winsToQualify !== undefined;
+  const winsToQualify = config?.winsToQualify || 3;
+
   // Sort players by record (wins desc, then by seed)
-  const sortedPlayers = [...players].sort((a, b) => {
+  let sortedPlayers = [...players].sort((a, b) => {
     const recordA = playerRecords.get(a.id)!;
     const recordB = playerRecords.get(b.id)!;
     if (recordB.wins !== recordA.wins) return recordB.wins - recordA.wins;
     return a.seed - b.seed;
   });
+
+  // Filter out qualified players in qualification mode
+  if (isQualificationMode) {
+    sortedPlayers = sortedPlayers.filter((player) => {
+      const record = playerRecords.get(player.id);
+      return !record || record.wins < winsToQualify;
+    });
+  }
 
   // Pair players with same record, avoiding rematches
   const newMatches: Match[] = [];
@@ -601,6 +614,20 @@ export function generateSwissNextRound(
   }
 
   return newMatches;
+}
+
+export function generateKnockoutFromSwiss(
+  qualifiedPlayers: Player[],
+  config?: TournamentFormatConfig
+): Match[] {
+  // Seed the qualified players by assigning new seeds based on qualification order
+  const seededPlayers = qualifiedPlayers.map((player, index) => ({
+    ...player,
+    seed: index + 1,
+  }));
+
+  // Generate single elimination bracket
+  return generateSingleEliminationBracket(seededPlayers);
 }
 
 // ============================================================================

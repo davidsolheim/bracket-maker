@@ -11,6 +11,7 @@ import {
   overrideMatchPlayers as overrideMatchPlayersLib,
   generateSwissNextRound,
   generateKnockoutFromGroups,
+  generateKnockoutFromSwiss,
 } from '@/lib/bracket';
 import { isGroupStageComplete, isRoundComplete } from '@/lib/standings';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
@@ -51,6 +52,7 @@ interface TournamentContextType {
     isForfeited?: boolean
   ) => void;
   advanceSwissRound: (tournamentId: string) => void;
+  advanceSwissToKnockout: (tournamentId: string) => void;
   advanceToKnockout: (tournamentId: string) => void;
 }
 
@@ -208,11 +210,27 @@ export function TournamentProvider({
       }
 
       case 'swiss': {
-        // Complete when all rounds are done
-        const totalRounds = tournament.formatConfig?.numberOfRounds || 
-          Math.ceil(Math.log2(tournament.players.length));
-        const currentRound = tournament.currentSwissRound || 1;
-        return currentRound >= totalRounds && isRoundComplete(matches, currentRound);
+        // Check if qualification phase is complete
+        const isQualificationMode = tournament.formatConfig?.winsToQualify !== undefined;
+
+        if (isQualificationMode) {
+          // In qualification mode, check if knockout phase is complete
+          if (tournament.swissQualificationComplete) {
+            // Check knockout completion (similar to single-elimination)
+            const knockoutMatches = matches.filter((m) => m.bracket === 'winners');
+            const maxRound = Math.max(...knockoutMatches.map((m) => m.round), 0);
+            const finalMatch = knockoutMatches.find((m) => m.round === maxRound);
+            return !!finalMatch?.winnerId;
+          }
+          // Qualification phase is not complete yet
+          return false;
+        } else {
+          // Fixed rounds mode: complete when all rounds are done
+          const totalRounds = tournament.formatConfig?.numberOfRounds ||
+            Math.ceil(Math.log2(tournament.players.length));
+          const currentRound = tournament.currentSwissRound || 1;
+          return currentRound >= totalRounds && isRoundComplete(matches, currentRound);
+        }
       }
 
       case 'group-knockout': {
@@ -403,8 +421,7 @@ export function TournamentProvider({
     if (!tournament || tournament.format !== 'swiss') return;
 
     const currentRound = tournament.currentSwissRound || 1;
-    const totalRounds = tournament.formatConfig?.numberOfRounds || 
-      Math.ceil(Math.log2(tournament.players.length));
+    const isQualificationMode = tournament.formatConfig?.winsToQualify !== undefined;
 
     // Check if current round is complete
     if (!isRoundComplete(tournament.matches, currentRound)) {
@@ -412,26 +429,108 @@ export function TournamentProvider({
       return;
     }
 
-    if (currentRound >= totalRounds) {
-      toast.info('All Swiss rounds are complete');
+    if (isQualificationMode) {
+      // In qualification mode, check if enough players have qualified
+      const qualifiedPlayers = tournament.players.filter(
+        (player) => (player.wins || 0) >= (tournament.formatConfig?.winsToQualify || 3)
+      ).length;
+
+      const targetQualifiers = tournament.formatConfig?.qualifyingPlayers || 8;
+
+      if (qualifiedPlayers >= targetQualifiers) {
+        toast.info(`Qualification target reached (${qualifiedPlayers}/${targetQualifiers}). Use "Advance to Knockout" instead.`);
+        return;
+      }
+
+      // Generate next round matches
+      const newMatches = generateSwissNextRound(
+        tournament.players,
+        tournament.matches,
+        currentRound,
+        tournament.formatConfig
+      );
+
+      const updated: Tournament = {
+        ...tournament,
+        matches: [...tournament.matches, ...newMatches],
+        currentSwissRound: currentRound + 1,
+      };
+
+      updateTournament(updated);
+      toast.success(`Qualification Round ${currentRound + 1} generated`);
+    } else {
+      // Fixed rounds mode
+      const totalRounds = tournament.formatConfig?.numberOfRounds ||
+        Math.ceil(Math.log2(tournament.players.length));
+
+      if (currentRound >= totalRounds) {
+        toast.info('All Swiss rounds are complete');
+        return;
+      }
+
+      // Generate next round matches
+      const newMatches = generateSwissNextRound(
+        tournament.players,
+        tournament.matches,
+        currentRound,
+        tournament.formatConfig
+      );
+
+      const updated: Tournament = {
+        ...tournament,
+        matches: [...tournament.matches, ...newMatches],
+        currentSwissRound: currentRound + 1,
+      };
+
+      updateTournament(updated);
+      toast.success(`Round ${currentRound + 1} generated`);
+    }
+  };
+
+  const advanceSwissToKnockout = (tournamentId: string) => {
+    const tournament = tournaments.find((t) => t.id === tournamentId);
+    if (!tournament || tournament.format !== 'swiss') return;
+
+    const isQualificationMode = tournament.formatConfig?.winsToQualify !== undefined;
+    if (!isQualificationMode) {
+      toast.error('This tournament is not in qualification mode');
       return;
     }
 
-    // Generate next round matches
-    const newMatches = generateSwissNextRound(
-      tournament.players,
-      tournament.matches,
-      currentRound
+    // Check if qualification target is met
+    const winsToQualify = tournament.formatConfig?.winsToQualify || 3;
+    const qualifiedPlayers = tournament.players.filter(
+      (player) => (player.wins || 0) >= winsToQualify
+    );
+
+    const targetQualifiers = tournament.formatConfig?.qualifyingPlayers || 8;
+    if (qualifiedPlayers.length < targetQualifiers) {
+      toast.error(`Need ${targetQualifiers} qualified players, but only ${qualifiedPlayers.length} have ${winsToQualify} wins`);
+      return;
+    }
+
+    // Sort qualified players by wins (desc), then by seed (asc)
+    const sortedQualifiedPlayers = qualifiedPlayers.sort((a, b) => {
+      const winsA = a.wins || 0;
+      const winsB = b.wins || 0;
+      if (winsB !== winsA) return winsB - winsA;
+      return a.seed - b.seed;
+    });
+
+    // Generate knockout bracket from qualified players
+    const knockoutMatches = generateKnockoutFromSwiss(
+      sortedQualifiedPlayers,
+      tournament.formatConfig
     );
 
     const updated: Tournament = {
       ...tournament,
-      matches: [...tournament.matches, ...newMatches],
-      currentSwissRound: currentRound + 1,
+      matches: [...tournament.matches, ...knockoutMatches],
+      swissQualificationComplete: true,
     };
 
     updateTournament(updated);
-    toast.success(`Round ${currentRound + 1} generated`);
+    toast.success(`Knockout bracket generated with ${qualifiedPlayers.length} players`);
   };
 
   const advanceToKnockout = (tournamentId: string) => {
@@ -482,6 +581,7 @@ export function TournamentProvider({
         overrideMatchPlayers,
         forceMatchWinner,
         advanceSwissRound,
+        advanceSwissToKnockout,
         advanceToKnockout,
       }}
     >

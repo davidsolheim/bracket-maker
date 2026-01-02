@@ -51,7 +51,7 @@ export async function waitForToast(page: Page, text?: string) {
  * Fill tournament name and validate
  */
 export async function fillTournamentName(page: Page, name: string) {
-  await page.getByLabel('Tournament Name').fill(name);
+  await page.getByPlaceholder('Enter tournament name').fill(name);
 }
 
 /**

@@ -46,17 +46,19 @@ export default function HistoryPage() {
                 : null;
 
               return (
-                <div
+                <article
                   key={tournament.id}
                   className={cn(
                     'rounded-lg border-2 border-gray-200 bg-white p-6',
                     'dark:border-gray-700 dark:bg-gray-800'
                   )}
+                  aria-labelledby={`history-title-${tournament.id}`}
                 >
                   <div className="mb-4 flex items-start justify-between">
                     <Link
                       href={`/tournament/${tournament.id}`}
                       className="text-xl font-bold hover:text-green-600 dark:hover:text-green-400"
+                      id={`history-title-${tournament.id}`}
                     >
                       {tournament.name}
                     </Link>
@@ -66,6 +68,7 @@ export default function HistoryPage() {
                         'rounded px-2 py-1 text-sm text-red-600',
                         'hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20'
                       )}
+                      aria-label={`Delete tournament ${tournament.name}`}
                     >
                       Delete
                     </button>
@@ -91,7 +94,7 @@ export default function HistoryPage() {
                       </div>
                     </div>
                   )}
-                </div>
+                </article>
               );
             })}
           </div>

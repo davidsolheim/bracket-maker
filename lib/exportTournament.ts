@@ -1,5 +1,4 @@
 import type { Tournament, Match, Player } from '@/types/tournament';
-import { toPng } from 'html-to-image';
 
 export function exportToJSON(tournament: Tournament): string {
   const exportData = {
@@ -60,6 +59,17 @@ export function downloadFile(content: string, filename: string, mimeType: string
   URL.revokeObjectURL(url);
 }
 
+export function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 export function exportTournamentJSON(tournament: Tournament) {
   const json = exportToJSON(tournament);
   const filename = `${tournament.name.replace(/[^a-z0-9]/gi, '_')}_${tournament.id}.json`;
@@ -76,27 +86,37 @@ function sanitizeFilename(name: string): string {
   return name.replace(/[^a-z0-9]/gi, '_');
 }
 
+// Note: exportTournamentImage is now handled directly in the ReactFlowBracket component
+// This function is kept for backward compatibility but is deprecated
 export async function exportTournamentImage(
   element: HTMLElement,
   tournamentName: string
 ): Promise<void> {
-  // Detect theme for background color
-  const isDarkMode =
-    document.documentElement.classList.contains('dark') ||
-    window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const backgroundColor = isDarkMode ? '#111827' : '#ffffff'; // gray-900 or white
+  console.warn('exportTournamentImage is deprecated. Use ReactFlowBracket ref exportToBlob method instead.');
 
-  const dataUrl = await toPng(element, {
-    backgroundColor,
-    pixelRatio: 2, // high quality
-    quality: 1.0,
-  });
+  // Fallback implementation using html-to-image
+  try {
+    const { toPng } = await import('html-to-image');
 
-  // Trigger download
-  const link = document.createElement('a');
-  link.download = `${sanitizeFilename(tournamentName)}_bracket.png`;
-  link.href = dataUrl;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+    const isDarkMode =
+      document.documentElement.classList.contains('dark') ||
+      window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const backgroundColor = isDarkMode ? '#111827' : '#ffffff';
+
+    const dataUrl = await toPng(element, {
+      backgroundColor,
+      pixelRatio: 2,
+      quality: 1.0,
+    });
+
+    const link = document.createElement('a');
+    link.download = `${sanitizeFilename(tournamentName)}_bracket.png`;
+    link.href = dataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error('Failed to export image:', error);
+    throw error;
+  }
 }

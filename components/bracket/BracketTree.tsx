@@ -2,7 +2,7 @@
 
 import { useMemo, forwardRef } from 'react';
 import type { Match, Player, TournamentFormat, TournamentFormatConfig } from '@/types/tournament';
-import { ReactFlowBracket } from './ReactFlowBracket';
+import { ReactFlowBracket, type ReactFlowBracketRef } from './ReactFlowBracket';
 
 interface BracketTreeProps {
   matches: Match[];
@@ -19,7 +19,7 @@ interface BracketTreeProps {
   activeMatchId?: string;
 }
 
-export const BracketTree = forwardRef<HTMLDivElement, BracketTreeProps>(
+export const BracketTree = forwardRef<ReactFlowBracketRef, BracketTreeProps>(
   function BracketTree(
     {
       matches,
@@ -86,8 +86,9 @@ export const BracketTree = forwardRef<HTMLDivElement, BracketTreeProps>(
     }, [matches, format, swissQualificationComplete]);
 
     return (
-      <div ref={ref} className="pb-8">
+      <div className="pb-8">
         <ReactFlowBracket
+          ref={ref}
           matches={effectiveMatches}
           players={players}
           format={effectiveFormat}

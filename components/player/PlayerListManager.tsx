@@ -161,9 +161,9 @@ export function PlayerListManager() {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       {/* Left column: List of saved player lists */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+      <section className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800" aria-labelledby="saved-lists-title">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Saved Lists</h2>
+          <h2 id="saved-lists-title" className="text-2xl font-bold">Saved Lists</h2>
           <button
             onClick={handleNewList}
             className={cn(
@@ -222,11 +222,11 @@ export function PlayerListManager() {
             ))}
           </div>
         )}
-      </div>
+      </section>
 
       {/* Right column: Edit selected list */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-        <h2 className="mb-4 text-2xl font-bold">
+      <section className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800" aria-labelledby="edit-list-title">
+        <h2 id="edit-list-title" className="mb-4 text-2xl font-bold">
           {selectedListId ? (isEditing ? 'Edit List' : 'View List') : 'Create New List'}
         </h2>
 
@@ -342,7 +342,7 @@ export function PlayerListManager() {
             </div>
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

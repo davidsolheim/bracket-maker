@@ -69,6 +69,7 @@ export default function Home() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
+          role="banner"
         >
           <h1 className="mb-2 text-4xl md:text-5xl font-bold heading gradient-text">
             Tournament Dashboard
@@ -117,12 +118,13 @@ export default function Home() {
             </motion.div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {activeTournaments.map((tournament, index) => (
-                <motion.div
+                <motion.article
                   key={tournament.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 + index * 0.05 }}
                   className="relative group"
+                  aria-labelledby={`tournament-title-${tournament.id}`}
                 >
                   <Link
                     href={`/tournament/${tournament.id}`}
@@ -139,7 +141,7 @@ export default function Home() {
                         LIVE
                       </span>
                     </div>
-                    <h3 className="mb-2 text-xl font-bold text-white heading">
+                    <h3 id={`tournament-title-${tournament.id}`} className="mb-2 text-xl font-bold text-white heading">
                       {tournament.name}
                     </h3>
                     <p className="mb-2 text-sm text-[var(--text-secondary)]">
@@ -158,12 +160,13 @@ export default function Home() {
                       'sm:opacity-100'
                     )}
                     title="Delete tournament"
+                    aria-label={`Delete tournament ${tournament.name}`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
-                </motion.div>
+                </motion.article>
               ))}
             </div>
           </section>
@@ -184,12 +187,13 @@ export default function Home() {
             </motion.div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {recentTournaments.map((tournament, index) => (
-                <motion.div
+                <motion.article
                   key={tournament.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 + index * 0.05 }}
                   className="relative group"
+                  aria-labelledby={`tournament-title-recent-${tournament.id}`}
                 >
                   <Link
                     href={`/tournament/${tournament.id}`}
@@ -206,7 +210,7 @@ export default function Home() {
                         COMPLETED
                       </span>
                     </div>
-                    <h3 className="mb-2 text-xl font-bold text-white heading">
+                    <h3 id={`tournament-title-recent-${tournament.id}`} className="mb-2 text-xl font-bold text-white heading">
                       {tournament.name}
                     </h3>
                     <p className="mb-2 text-sm text-[var(--text-secondary)]">
@@ -227,12 +231,13 @@ export default function Home() {
                       'sm:opacity-100'
                     )}
                     title="Delete tournament"
+                    aria-label={`Delete tournament ${tournament.name}`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
-                </motion.div>
+                </motion.article>
               ))}
             </div>
           </section>

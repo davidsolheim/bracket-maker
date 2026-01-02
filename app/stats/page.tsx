@@ -80,7 +80,8 @@ export default function StatsPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <section className="overflow-x-auto" aria-labelledby="stats-table-title">
+            <h2 id="stats-table-title" className="sr-only">Player Statistics Table</h2>
             <table className="w-full border-collapse rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
               <thead>
                 <tr className="bg-gray-100 dark:bg-gray-700">
@@ -140,7 +141,7 @@ export default function StatsPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </section>
         )}
       </main>
     </div>

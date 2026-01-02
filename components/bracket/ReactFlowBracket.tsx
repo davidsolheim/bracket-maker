@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useImperativeHandle, forwardRef, useRef } from 'react';
 import {
   ReactFlow,
   Background,
@@ -8,6 +8,8 @@ import {
   MiniMap,
   useNodesState,
   useEdgesState,
+  useReactFlow,
+  ReactFlowProvider,
   type Node,
   type Edge,
   type NodeTypes,
@@ -41,6 +43,11 @@ const edgeTypes: EdgeTypes = {
   bracketEdge: BracketEdge,
 };
 
+// Export interface for the ReactFlowBracket component
+export interface ReactFlowBracketRef {
+  exportToBlob: (options?: { backgroundColor?: string; padding?: number; quality?: number }) => Promise<Blob | null>;
+}
+
 interface ReactFlowBracketProps {
   matches: Match[];
   players: Player[];
@@ -57,7 +64,8 @@ interface ReactFlowBracketProps {
   activeMatchId?: string;
 }
 
-export function ReactFlowBracket({
+// Inner component that has access to React Flow context
+function ReactFlowContent({
   matches,
   players,
   format,
@@ -71,9 +79,49 @@ export function ReactFlowBracket({
   onAdvanceSwissRound,
   onAdvanceToKnockout,
   activeMatchId,
-}: ReactFlowBracketProps) {
+  onExportReady,
+}: ReactFlowBracketProps & { onExportReady: (exportFn: () => Promise<Blob | null>) => void }) {
   const [fitViewOnInit, setFitViewOnInit] = useState(true);
-  
+  const { fitView } = useReactFlow();
+
+  // Export method exposed via ref
+  const exportToBlob = useCallback(async (options: { backgroundColor?: string; padding?: number; quality?: number } = {}) => {
+    const {
+      backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--bg-dark') || '#111827',
+      padding = 20,
+      quality = 1.0,
+    } = options;
+
+    // Fit view to ensure all content is visible
+    fitView({ padding, includeHiddenNodes: false, minZoom: 0.1, maxZoom: 1 });
+
+    // Small delay to ensure fitView completes
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Use html-to-image to capture the React Flow container
+    const { toBlob } = await import('html-to-image');
+    const container = document.querySelector('.react-flow') as HTMLElement;
+
+    if (!container) {
+      throw new Error('React Flow container not found');
+    }
+
+    return toBlob(container, {
+      backgroundColor,
+      quality,
+      pixelRatio: 2,
+      // Include canvas elements which React Flow uses
+      skipFonts: false,
+      // Don't filter out canvas elements
+      filter: () => true,
+    });
+  }, [fitView]);
+
+  // Notify parent component that export function is ready
+  useMemo(() => {
+    onExportReady(exportToBlob);
+  }, [exportToBlob, onExportReady]);
+
   // Generate layout based on format
   const { initialNodes, initialEdges } = useMemo(() => {
     const layout = generateBracketLayout(matches, players, format, {
@@ -85,22 +133,22 @@ export function ReactFlowBracket({
       onOverrideClick,
       activeMatchId,
     });
-    
+
     return {
       initialNodes: layout.nodes,
       initialEdges: layout.edges,
     };
   }, [matches, players, format, formatConfig, currentSwissRound, groupStageComplete, winner, onMatchClick, onOverrideClick, activeMatchId]);
-  
+
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  
+
   // Update nodes/edges when layout changes
   useMemo(() => {
     setNodes(initialNodes);
     setEdges(initialEdges);
   }, [initialNodes, initialEdges, setNodes, setEdges]);
-  
+
   // Get format label
   const formatLabel = useMemo(() => {
     switch (format) {
@@ -112,7 +160,7 @@ export function ReactFlowBracket({
       default: return format;
     }
   }, [format]);
-  
+
   // Calculate completion stats
   const completionStats = useMemo(() => {
     const completed = matches.filter(m => m.winnerId).length;
@@ -120,7 +168,7 @@ export function ReactFlowBracket({
     const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
     return { completed, total, percent };
   }, [matches]);
-  
+
   // Determine if we need action buttons
   const showAdvanceButton = useMemo(() => {
     if (format === 'swiss' && !swissQualificationComplete) {
@@ -136,7 +184,7 @@ export function ReactFlowBracket({
     }
     return false;
   }, [format, matches, currentSwissRound, swissQualificationComplete, groupStageComplete, onAdvanceSwissRound, onAdvanceToKnockout]);
-  
+
   return (
     <div className="w-full h-[600px] rounded-xl overflow-hidden esports-card">
       <ReactFlow
@@ -174,13 +222,13 @@ export function ReactFlowBracket({
           size={1}
           color="rgba(255, 255, 255, 0.03)"
         />
-        
+
         {/* Controls */}
-        <Controls 
+        <Controls
           showInteractive={false}
           className="!bg-[var(--bg-card)] !border-[var(--border-dim)] !rounded-lg !shadow-lg"
         />
-        
+
         {/* Mini map */}
         <MiniMap
           nodeColor={(node) => {
@@ -194,7 +242,7 @@ export function ReactFlowBracket({
           pannable
           zoomable
         />
-        
+
         {/* Info Panel */}
         <Panel position="top-left" className="!m-3">
           <motion.div
@@ -213,7 +261,7 @@ export function ReactFlowBracket({
                 </span>
               )}
             </div>
-            
+
             {/* Progress */}
             <div className="space-y-1">
               <div className="flex items-center justify-between text-xs">
@@ -231,7 +279,7 @@ export function ReactFlowBracket({
                 />
               </div>
             </div>
-            
+
             {/* Advance button */}
             {showAdvanceButton && (
               <Button
@@ -245,7 +293,7 @@ export function ReactFlowBracket({
             )}
           </motion.div>
         </Panel>
-        
+
         {/* Legend Panel */}
         <Panel position="bottom-left" className="!m-3">
           <motion.div
@@ -272,3 +320,39 @@ export function ReactFlowBracket({
     </div>
   );
 }
+
+// Internal component that wraps the content with ReactFlowProvider
+function ReactFlowBracketInternal(
+  props: ReactFlowBracketProps,
+  ref: React.ForwardedRef<ReactFlowBracketRef>
+) {
+  const exportFunctionRef = useRef<(() => Promise<Blob | null>) | null>(null);
+
+  // Export method exposed via ref
+  const exportToBlob = useCallback(async (options: { backgroundColor?: string; padding?: number; quality?: number } = {}) => {
+    if (exportFunctionRef.current) {
+      return exportFunctionRef.current();
+    }
+    throw new Error('Export function not available');
+  }, []);
+
+  // Expose the export method via ref
+  useImperativeHandle(ref, () => ({
+    exportToBlob,
+  }), [exportToBlob]);
+
+  const handleExportReady = useCallback((exportFn: () => Promise<Blob | null>) => {
+    exportFunctionRef.current = exportFn;
+  }, []);
+
+  return (
+    <ReactFlowProvider>
+      <ReactFlowContent {...props} onExportReady={handleExportReady} />
+    </ReactFlowProvider>
+  );
+}
+
+// Exported component with ref forwarding
+export const ReactFlowBracket = forwardRef<ReactFlowBracketRef, ReactFlowBracketProps>(
+  ReactFlowBracketInternal
+);

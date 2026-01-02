@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useTournament } from '@/contexts/TournamentContext';
 import { BracketTree } from '@/components/bracket/BracketTree';
+import type { ReactFlowBracketRef } from '@/components/bracket/ReactFlowBracket';
 import { MatchList } from '@/components/match/MatchList';
 import { ScoreModal } from '@/components/match/ScoreModal';
 import { MatchOverrideModal } from '@/components/match/MatchOverrideModal';
@@ -53,7 +54,7 @@ export default function TournamentPage() {
   const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false);
   const [isExportingImage, setIsExportingImage] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const bracketRef = useRef<HTMLDivElement>(null);
+  const bracketRef = useRef<ReactFlowBracketRef>(null);
 
   const tournamentId = params.id as string;
   const tournament = tournaments.find((t) => t.id === tournamentId);
@@ -171,7 +172,25 @@ export default function TournamentPage() {
 
     setIsExportingImage(true);
     try {
-      await exportTournamentImage(bracketRef.current, tournament.name);
+      const blob = await bracketRef.current.exportToBlob({
+        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg-dark') || '#111827',
+        padding: 20,
+        quality: 1.0,
+      });
+
+      if (blob) {
+        // Use the existing downloadBlob function
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${tournament.name.replace(/[^a-z0-9]/gi, '_')}_bracket.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        throw new Error('Failed to generate image blob');
+      }
     } catch (error) {
       console.error('Failed to export image:', error);
     } finally {

@@ -6,6 +6,8 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Toaster } from "sonner";
 import { ErrorBoundaryWrapper } from "@/components/ErrorBoundaryWrapper";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { getWebApplicationSchema, getOrganizationSchema } from "@/lib/structured-data";
 
 const rajdhani = Rajdhani({
   variable: "--font-heading",
@@ -26,22 +28,52 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Bracket Magic - Tournament Bracket Manager",
-  description: "Create and manage double elimination tournament brackets",
+  metadataBase: new URL("https://www.bracket-magic.com"),
+  title: {
+    default: "Bracket Magic - Tournament Bracket Manager",
+    template: "%s | Bracket Magic",
+  },
+  description: "Create and manage professional tournament brackets with ease. Supports double elimination, round robin, Swiss system, and more.",
+  keywords: ["tournament manager", "bracket maker", "double elimination", "round robin", "swiss system", "esports tournament", "bumper pool brackets"],
+  authors: [{ name: "David Solheim", url: "https://davidsolheim.com" }],
+  creator: "David Solheim",
   icons: {
     icon: "/bracket-magic-icon.png",
     apple: "/bracket-magic-icon.png",
   },
   openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://www.bracket-magic.com",
+    siteName: "Bracket Magic",
     title: "Bracket Magic - Tournament Bracket Manager",
-    description: "Create and manage double elimination tournament brackets",
-    images: ["/bracket-magic-banner.png"],
+    description: "Create and manage professional tournament brackets. Supports double elimination, round robin, Swiss system, and group stages.",
+    images: [
+      {
+        url: "/bracket-magic-banner.png",
+        width: 1200,
+        height: 630,
+        alt: "Bracket Magic Tournament Manager",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Bracket Magic - Tournament Bracket Manager",
-    description: "Create and manage double elimination tournament brackets",
+    description: "Create and manage professional tournament brackets with ease.",
     images: ["/bracket-magic-banner.png"],
+    creator: "@davidsolheim",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 
@@ -52,6 +84,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full dark">
+      <head>
+        <JsonLd data={getWebApplicationSchema()} />
+        <JsonLd data={getOrganizationSchema()} />
+      </head>
       <body
         className={`${rajdhani.variable} ${chakraPetch.variable} ${jetbrainsMono.variable} antialiased h-full flex flex-col`}
       >

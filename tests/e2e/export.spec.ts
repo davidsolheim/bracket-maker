@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { clearAppData, createAndStartTournament } from '../fixtures/test-utils';
+import { clearAppData, createAndStartTournament, navigateTo } from '../fixtures/test-utils';
 import { PLAYERS_4 } from '../fixtures/players';
 
 test.describe('Tournament Export', () => {
